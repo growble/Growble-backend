@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Login - Growble</title>
+
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box;font-family:Arial,Helvetica,sans-serif}
+    body{
+      min-height:100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      background:linear-gradient(135deg,#0b1220,#231942);
+      color:white;
+    }
+    .card{
+      width:100%;
+      max-width:420px;
+      background:rgba(255,255,255,0.06);
+      border:1px solid rgba(255,255,255,0.12);
+      backdrop-filter: blur(12px);
+      border-radius:18px;
+      padding:26px;
+      box-shadow:0 10px 40px rgba(0,0,0,0.35);
+    }
+    .brand{
+      font-size:26px;
+      font-weight:800;
+      color:#00d4ff;
+      margin-bottom:6px;
+    }
+    h2{margin:10px 0 6px;font-size:22px}
+    p.sub{opacity:0.85;margin-bottom:18px;font-size:14px}
+    label{display:block;margin:12px 0 6px;font-size:13px;opacity:0.85}
+    input{
+      width:100%;
+      padding:12px 14px;
+      border-radius:12px;
+      border:1px solid rgba(255,255,255,0.2);
+      background:rgba(0,0,0,0.2);
+      color:white;
+      outline:none;
+      font-size:14px;
+    }
+    input:focus{
+      border-color:#00d4ff;
+      box-shadow:0 0 0 4px rgba(0,212,255,0.15);
+    }
+    button{
+      margin-top:16px;
+      width:100%;
+      padding:12px;
+      border:none;
+      border-radius:12px;
+      background:#00d4ff;
+      color:black;
+      font-size:16px;
+      font-weight:800;
+      cursor:pointer;
+    }
+    button:hover{background:#00bce0}
+    .bottom{
+      text-align:center;
+      margin-top:14px;
+      font-size:14px;
+      opacity:0.9;
+    }
+    a{color:#00d4ff;text-decoration:none;font-weight:700}
+  </style>
+</head>
+
+<body>
+  <div class="card">
+    <div class="brand">Growble</div>
+    <h2>Welcome back</h2>
+    <p class="sub">Login to continue your growth journey.</p>
+
+    <label>Email</label>
+    <input id="email" placeholder="Enter your email" type="email"/>
+
+    <label>Password</label>
+<div style="position:relative;">
+  <input id="password" placeholder="Enter password" type="password" style="padding-right:45px;" />
+  <span id="togglePassword" 
+      style="
+        position:absolute;
+        right:10px;
+        top:50%;
+        transform:translateY(-50%);
+        cursor:pointer;
+        font-size:18px;
+        opacity:1;
+        padding:6px;
+        border-radius:8px;
+        background:rgba(255,255,255,0.08);
+        transition:0.2s;
+      "
+      onmouseover="this.style.background='rgba(0,212,255,0.2)'"
+      onmouseout="this.style.background='rgba(255,255,255,0.08)'"
+>
+  👁
+</span>
+</div>
+
+    <button id="loginBtn">Login</button>
+
+    <div class="bottom">
+      New user? <a href="/signup.html">Signup</a>
+    </div>
+  </div>
+<!-- ✅ Premium Toast -->
+<div id="toast" class="toast hidden">
+  <div class="toast-icon" id="toastIcon">✅</div>
+  <div class="toast-body">
+    <div class="toast-title" id="toastTitle">Success</div>
+    <div class="toast-msg" id="toastMsg">Login successful</div>
+    <button class="toast-btn" id="toastOkBtn">Continue</button>
+  </div>
+</div>
+
+<style>
+  .toast{
+    position:fixed;
+    top:22px;
+    left:50%;
+    transform:translateX(-50%);
+    width:min(420px,92vw);
+    background:rgba(255,255,255,0.10);
+    border:1px solid rgba(255,255,255,0.18);
+    backdrop-filter: blur(14px);
+    border-radius:16px;
+    padding:14px 16px;
+    display:flex;
+    gap:12px;
+    align-items:flex-start;
+    box-shadow:0 18px 45px rgba(0,0,0,0.4);
+    z-index:9999;
+    animation:toastIn 280ms ease-out;
+  }
+  .toast.hidden{display:none;}
+  .toast-icon{
+    width:42px;height:42px;
+    border-radius:12px;
+    display:flex;align-items:center;justify-content:center;
+    font-size:20px;
+    background:rgba(0,212,255,0.18);
+    border:1px solid rgba(0,212,255,0.22);
+  }
+  .toast-body{flex:1}
+  .toast-title{
+    font-weight:900;
+    font-size:15px;
+    margin-bottom:2px;
+    color:#00d4ff;
+    letter-spacing:0.2px;
+  }
+  .toast-msg{
+    font-size:13px;
+    opacity:0.9;
+    margin-bottom:10px;
+  }
+  .toast-btn{
+    padding:10px 14px;
+    border:none;
+    border-radius:12px;
+    cursor:pointer;
+    font-weight:900;
+    background:linear-gradient(135deg,#00d4ff,#6ee7ff);
+    color:#051019;
+    transition:transform 0.15s ease;
+  }
+  .toast-btn:hover{transform:translateY(-1px);}
+  .toast-btn:active{transform:translateY(0px) scale(0.98);}
+
+  @keyframes toastIn{
+    from{opacity:0; transform:translateX(-50%) translateY(-10px) scale(0.98);}
+    to{opacity:1; transform:translateX(-50%) translateY(0) scale(1);}
+  }
+</style>
+
+  <script src="/login.js"></script>
+</body>
+</html>

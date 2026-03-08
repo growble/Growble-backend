@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Growble - CRM Dashboard</title>
+
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box;font-family:Arial,Helvetica,sans-serif}
+    body{
+      min-height:100vh;
+      background: radial-gradient(circle at top, #0a2a43, #0b1220 55%);
+      color:white;
+      padding:22px;
+    }
+
+    .container{max-width:1250px;margin:auto;}
+
+    /* top bar */
+    .topbar{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:12px;
+      padding:14px 16px;
+      border-radius:18px;
+      background:rgba(255,255,255,0.05);
+      border:1px solid rgba(255,255,255,0.1);
+      backdrop-filter: blur(14px);
+      margin-bottom:18px;
+    }.brand{
+display:flex;
+align-items:center;
+gap:10px;
+font-size:22px;
+font-weight:900;
+color:#00d4ff;
+cursor:pointer;
+}
+
+.brand img{
+height:56px;
+}
+    .user-mini{
+      font-size:13px;
+      opacity:0.9;
+      line-height:1.4;
+    }
+
+    .actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    .btn{
+  padding:10px 14px;
+  border-radius:12px;
+  border:none;
+  cursor:pointer;
+  font-weight:900;
+  font-size:13px;
+  transition:all 0.2s ease;
+}
+
+.btn:hover{
+  transform: translateY(-1px);
+}
+    .btn-primary{background:#00d4ff;color:black;}
+    .btn-primary:hover{background:#00bce0;}
+    .btn-outline{
+      background:transparent;
+      border:1px solid rgba(0,212,255,0.4);
+      color:#00d4ff;
+    }
+    .btn-outline:hover{background:rgba(0,212,255,0.12);}
+    .btn-danger{
+      background:rgba(255,70,70,0.16);
+      border:1px solid rgba(255,70,70,0.35);
+      color:#ffbaba;
+    }
+
+    /* layout */
+    .grid{
+      display:grid;
+      grid-template-columns: 1.7fr 1fr;
+      gap:16px;
+    }
+
+    /* cards */
+    .card{
+  background:rgba(255,255,255,0.06);
+  border:1px solid rgba(255,255,255,0.12);
+  border-radius:20px;
+  padding:16px;
+  backdrop-filter: blur(14px);
+  box-shadow:0 10px 40px rgba(0,0,0,0.35);
+  transition:all 0.25s ease;
+}
+
+.card:hover{
+  transform: translateY(-3px);
+  box-shadow:0 18px 60px rgba(0,0,0,0.45);
+}
+
+    /* pipeline */
+    .pipeline{
+      display:grid;
+      grid-template-columns: repeat(4,1fr);
+      gap:12px;
+      margin-bottom:14px;
+    }
+
+    .pipe-box{
+      padding:14px;
+      border-radius:18px;
+      background:rgba(0,0,0,0.22);
+      border:1px solid rgba(255,255,255,0.1);
+    }
+    .pipe-box h3{
+  font-size:20px;
+  font-weight:900;
+  margin-bottom:6px;
+  color:#00d4ff;
+  text-shadow:0 0 10px rgba(0,212,255,0.4);
+}
+    .pipe-box p{
+      font-size:12px;
+      opacity:0.85;
+    }
+
+    /* filters */
+    .filters{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-bottom:12px;
+    }
+
+    .input, select{
+      padding:10px 12px;
+      border-radius:12px;
+      border:1px solid rgba(255,255,255,0.14);
+      background:rgba(0,0,0,0.25);
+      color:white;
+      outline:none;
+      font-size:13px;
+      min-width:160px;
+    }
+    .input:focus, select:focus{
+      border-color:#00d4ff;
+      box-shadow:0 0 0 3px rgba(0,212,255,0.12);
+    }
+
+    /* leads table */
+    table{width:100%;border-collapse:collapse;overflow:hidden;border-radius:16px;}
+    thead th{
+      text-align:left;
+      font-size:12px;
+      letter-spacing:0.5px;
+      opacity:0.9;
+      padding:12px;
+      background:rgba(0,212,255,0.08);
+      border-bottom:1px solid rgba(255,255,255,0.08);
+    }
+    tbody td{
+      padding:12px;
+      border-bottom:1px solid rgba(255,255,255,0.06);
+      font-size:13px;
+      opacity:0.92;
+    }
+    tbody tr:hover{background:rgba(255,255,255,0.05);}
+
+    .badge{
+      padding:5px 10px;
+      border-radius:999px;
+      font-size:12px;
+      font-weight:900;
+      display:inline-block;
+      border:1px solid rgba(255,255,255,0.15);
+    }
+    .b-new{background:rgba(0,212,255,0.15);color:#00d4ff;}
+    .b-contacted{background:rgba(255,200,0,0.12);color:#ffd86a;}
+    .b-interested{background:rgba(0,255,150,0.10);color:#72ffc7;}
+    .b-closed{background:rgba(180,120,255,0.12);color:#d9b6ff;}
+    .b-lost{background: rgba(255,80,80,0.12);color:#ff8a8a;
+}
+
+    /* follow-up calendar */
+    .calendar{
+      display:grid;
+      grid-template-columns: repeat(2,1fr);
+      gap:12px;
+      margin-top:10px;
+    }
+    .cal-box{
+      border-radius:18px;
+      padding:14px;
+      border:1px solid rgba(255,255,255,0.1);
+      background:rgba(0,0,0,0.22);
+    }
+    .cal-box h4{
+      font-size:14px;
+      font-weight:900;
+      margin-bottom:8px;
+      color:#00d4ff;
+    }
+    .cal-task{
+      padding:10px 12px;
+      border-radius:14px;
+      background:rgba(255,255,255,0.06);
+      border:1px solid rgba(255,255,255,0.1);
+      margin-bottom:10px;
+      font-size:13px;
+      line-height:1.5;
+      opacity:0.95;
+    }
+    .small{font-size:12px;opacity:0.8}
+.followup-today{
+  background:rgba(0,212,255,0.08);
+}
+
+.followup-overdue{
+  background:rgba(255,70,70,0.08);
+}
+
+.followup-upcoming{
+  background:rgba(255,255,255,0.02);
+}
+
+    /* responsive */
+    @media(max-width:1000px){
+      .grid{grid-template-columns:1fr;}
+      .pipeline{grid-template-columns:repeat(2,1fr);}
+      .calendar{grid-template-columns:1fr;}
+    }
+
+    /* ✅ Modal */
+    .modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.55);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+    }
+    .hidden { display: none !important; }
+
+    .modal-box {
+      width: 420px;
+      background: #0e1b2b;
+      padding: 20px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,0.08);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+    }
+
+    .modal-box input,
+    .modal-box select {
+      width: 100%;
+      padding: 10px;
+      margin-top: 12px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: #0a1422;
+      color: white;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+#toastContainer{
+  position: fixed;
+  right: 20px;
+  top: 20px;
+  z-index: 999999;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.toast{
+  min-width: 280px;
+  max-width: 380px;
+  background: linear-gradient(180deg, rgba(35,50,70,0.98), rgba(20,30,45,0.95));
+  border: 1px solid rgba(255,255,255,0.10);
+  border-radius: 16px;
+  padding: 12px 14px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.45);
+  color: white;
+  font-family: Arial, sans-serif;
+  animation: toastIn 0.25s ease-out;
+}
+
+@keyframes toastIn{
+  from{transform:translateY(-10px);opacity:0;}
+  to{transform:translateY(0);opacity:1;}
+}
+
+
+.toast-row{
+  display:flex;
+  justify-content: space-between;
+  align-items:center;
+  margin-bottom: 6px;
+}
+
+.toast-title{
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.toast-close{
+  cursor:pointer;
+  opacity:0.75;
+}
+
+.toast-body{
+  font-size: 13px;
+  opacity: 0.9;
+  white-space: pre-line;
+}
+  </style>
+</head>
+
+<body>
+  <div class="container">
+
+    <!-- TOPBAR -->
+    <div class="topbar">
+      <div>
+        <div class="brand" onclick="window.location.href='/'">
+  <img src="/images/logo.png" alt="Growble Logo">
+  <span>Growble</span>
+</div>
+        <div class="user-mini" id="userMini">Loading user...</div>
+      </div>
+
+      <div class="actions">
+        <div id="upgradeBtnContainer"></div>
+        <button class="btn btn-primary" id="addLeadBtn">+ Add Lead</button>
+        <button class="btn btn-danger" id="logoutBtn">Logout</button>
+      </div>
+    </div>
+
+    <!-- MAIN GRID -->
+    <div class="grid">
+
+      <!-- LEFT SIDE -->
+      <div class="card">
+
+        <div class="card-title">Pipeline Overview</div>
+
+        <div class="pipeline">
+
+  <div class="pipe-box">
+    <h3 id="countTotal">0</h3>
+    <p>Total Leads</p>
+  </div>
+
+  <div class="pipe-box">
+    <h3 id="countNew">0</h3>
+    <p>New Leads</p>
+  </div>
+
+  <div class="pipe-box">
+    <h3 id="countContacted">0</h3>
+    <p>Contacted</p>
+  </div>
+
+  <div class="pipe-box">
+    <h3 id="countInterested">0</h3>
+    <p>Interested</p>
+  </div>
+
+  <div class="pipe-box">
+    <h3 id="countClosed">0</h3>
+    <p>Closed</p>
+  </div>
+
+  <div class="pipe-box">
+    <h3 id="conversionRate">0%</h3>
+    <p>Conversion Rate</p>
+  </div>
+<div class="pipe-box">
+  <h3 id="countMissed">0</h3>
+  <p>Missed Follow-ups</p>
+</div>
+<div class="pipe-box">
+  <h3 id="countLost">0</h3>
+  <p>Lost Leads</p>
+</div>
+
+</div>
+<div class="card-title" style="margin-top:15px;">Lost Lead Analytics</div>
+
+<div id="lostAnalyticsBox" style="display:none"
+style="
+padding:12px;
+border-radius:14px;
+background:rgba(0,0,0,0.25);
+border:1px solid rgba(255,255,255,0.08);
+margin-bottom:15px;
+font-size:13px;
+position:relative;
+">
+
+<div id="lostAnalyticsContent">
+<span class="small">No lost lead data yet.</span>
+</div>
+
+<div id="lostAnalyticsLock"
+style="
+display:none;
+position:absolute;
+inset:0;
+background:rgba(5,10,20,0.75);
+backdrop-filter:blur(3px);
+border-radius:14px;
+display:flex;
+align-items:center;
+justify-content:center;
+text-align:center;
+font-size:13px;
+font-weight:700;
+color:#00d4ff;
+">
+
+🔒 Lost Lead Analytics  
+<br><br>
+Upgrade to <b>Growble Pro</b> to see  
+lost lead reasons and trends.
+
+</div>
+
+</div>
+
+        <div class="card-title">Leads</div>
+
+        <!-- filters -->
+        <div class="filters">
+          <input class="input" id="searchInput" placeholder="Search lead name / phone..." />
+          <select id="statusFilter">
+            <option value="all">All Status</option>
+            <option value="new">New</option>
+            <option value="contacted">Contacted</option>
+            <option value="interested">Interested</option>
+            <option value="closed">Closed</option>
+	    <option value="lost">lost</option>
+          </select>
+
+          <select id="followupFilter">
+            <option value="all">All Follow-ups</option>
+            <option value="today">Due Today</option>
+            <option value="week">This Week</option>
+            <option value="missed">Missed</option>
+          </select>
+        </div>
+
+        <!-- leads table -->
+        <div style="overflow:auto;border-radius:16px;">
+          <table>
+            <thead>
+              <tr>
+                <th>Lead</th>
+                <th>Status</th>
+                <th>Next Follow-up</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+
+            <tbody id="leadsBody">
+              <!-- JS fills -->
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+
+      <!-- RIGHT SIDE -->
+      <div class="card">
+        <div class="card-title">Follow-up Calendar</div>
+        <p class="small">This section shows upcoming follow-ups</p>
+
+        <div class="calendar">
+          <div class="cal-box">
+            <h4>Today</h4>
+            <div id="todayBox"></div>
+          </div>
+          <div class="cal-box">
+            <h4>Next 7 Days</h4>
+            <div id="weekBox"></div>
+          </div>
+        </div>
+
+        <div style="margin-top:14px">
+          <div class="card-title">Quick Actions</div>
+<div id="quickActionsBox">
+
+</div>
+
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ✅ Add Lead Modal (MUST be outside script) -->
+  <div id="addLeadModal" class="modal hidden">
+    <div class="modal-box">
+      <h2 style="margin-bottom: 8px;">Add New Lead</h2>
+
+      <form id="addLeadForm">
+        <input type="text" id="leadName" placeholder="Full Name" required />
+        <input type="text" id="leadPhone" placeholder="Phone" required />
+        <input type="text" id="leadNote" placeholder="Note (optional)" />
+
+        <select id="leadStatus">
+          <option value="new">new</option>
+          <option value="contacted">contacted</option>
+          <option value="interested">interested</option>
+          <option value="closed">closed</option>
+	  <option value="lost">lost</option>
+        </select>
+
+        <input type="date" id="followupDate" />
+
+        <div class="modal-actions">
+          <button type="submit" class="btn btn-primary">Save Lead</button>
+          <button type="button" id="closeLeadModal" class="btn btn-danger">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ✅ Use external JS -->
+<!-- ✅ Edit Lead Modal -->
+<div id="editLeadModal" class="modal hidden">
+  <div class="modal-box">
+    <h2 style="margin-bottom: 8px;">Edit Lead</h2>
+
+    <form id="editLeadForm">
+      <input type="text" id="editLeadName" placeholder="Full Name" required />
+      <input type="text" id="editLeadPhone" placeholder="Phone" required />
+      <input type="text" id="editLeadNote" placeholder="Note (optional)" />
+
+      <select id="editLeadStatus">
+        <option value="new">new</option>
+        <option value="contacted">contacted</option>
+        <option value="interested">interested</option>
+        <option value="closed">closed</option>
+	<option value="lost">lost</option>
+     </select>
+
+      <input type="date" id="editFollowupDate" />
+
+      <div class="modal-actions">
+        <button type="submit" class="btn btn-primary">Update Lead</button>
+        <button type="button" id="closeEditModal" class="btn btn-danger">Cancel</button>
+      </div>
+    </form>
+<div id="activitySection" style="margin-top:20px;">
+  <h4 style="color:#00d4ff;">Activity Log</h4>
+  <div id="activityLogBox" style="max-height:150px; overflow:auto; margin-top:10px;"></div>
+</div>
+  </div>
+</div>
+<!-- ✅ Delete Confirmation Modal -->
+<div id="deleteModal" class="modal hidden">
+  <div class="modal-box" style="border:1px solid rgba(255,70,70,0.35);">
+    <h2 style="margin-bottom:6px;color:#ffbaba;">Delete Lead?</h2>
+    <p style="font-size:13px;opacity:0.85;margin-bottom:14px;">
+      This action cannot be undone.
+    </p>
+
+    <div id="deleteLeadDetails"
+      style="padding:12px;border-radius:12px;background:rgba(0,0,0,0.22);border:1px solid rgba(255,255,255,0.08);margin-bottom:14px;">
+      <!-- JS fills -->
+    </div>
+
+    <div class="modal-actions">
+      <button type="button" id="confirmDeleteBtn" class="btn btn-danger" style="flex:1;">
+        🗑️ Yes, Delete
+      </button>
+      <button type="button" id="cancelDeleteBtn" class="btn btn-outline" style="flex:1;">
+        Cancel
+      </button>
+    </div>
+  </div>
+</div>
+<!-- LOST REASON MODAL -->
+<div id="lostReasonModal" class="modal hidden">
+  <div class="modal-box">
+    <h2 style="margin-bottom:10px;color:#ff8a8a;">Lead Marked as Lost</h2>
+
+    <p style="font-size:13px;opacity:0.85;margin-bottom:10px;">
+      Why was this lead lost?
+    </p>
+
+    <select id="lostReasonSelect">
+      <option value="">Select Reason</option>
+      <option value="expensive">Too Expensive</option>
+      <option value="competitor">Joined Competitor</option>
+      <option value="not_interested">Not Interested</option>
+      <option value="no_response">No Response</option>
+    </select>
+
+    <div class="modal-actions">
+      <button class="btn btn-primary" id="confirmLostBtn">
+        Confirm
+      </button>
+
+      <button class="btn btn-danger" id="cancelLostBtn">
+        Cancel
+      </button>
+    </div>
+  </div>
+</div>
+<!-- WhatsApp Template Modal -->
+<div id="templateModal" class="modal hidden">
+  <div class="modal-box">
+    <h2>Edit WhatsApp Templates</h2>
+
+    <textarea id="tplNew" placeholder="Template for NEW leads"
+      style="width:100%;margin-top:10px;height:60px;"></textarea>
+
+    <textarea id="tplContacted" placeholder="Template for CONTACTED leads"
+      style="width:100%;margin-top:10px;height:60px;"></textarea>
+
+    <textarea id="tplInterested" placeholder="Template for INTERESTED leads"
+      style="width:100%;margin-top:10px;height:60px;"></textarea>
+
+    <textarea id="tplClosed" placeholder="Template for CLOSED leads"
+      style="width:100%;margin-top:10px;height:60px;"></textarea>
+
+    <div class="modal-actions">
+      <button class="btn btn-primary" onclick="saveTemplates()">Save</button>
+      <button class="btn btn-danger" onclick="closeTemplateModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+  <script src="/index.js"></script>
+<!-- ✅ Toast Container -->
+<div id="toastContainer"></div>
+</body>
+</html>

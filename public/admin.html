@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin - Growble</title>
+
+  <style>
+    body{
+      margin:0;
+      font-family:Arial;
+      background:linear-gradient(135deg,#0b1220,#0a2a43);
+      color:white;
+      padding:20px;
+    }
+
+    .container{max-width:1200px;margin:auto;}
+
+    .topbar{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      margin-bottom:20px;
+    }
+
+    .brand{
+      font-size:24px;
+      font-weight:900;
+      color:#00d4ff;
+    }
+
+    .btn{
+      padding:8px 14px;
+      border-radius:10px;
+      border:none;
+      cursor:pointer;
+      font-weight:700;
+    }
+
+    .btn-danger{
+      background:#ff4b4b;
+      color:white;
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns:repeat(4,1fr);
+      gap:15px;
+      margin-bottom:25px;
+    }
+
+    .card{
+      background:rgba(255,255,255,0.06);
+      padding:15px;
+      border-radius:15px;
+      border:1px solid rgba(255,255,255,0.1);
+    }
+
+    .card h3{
+      margin:0 0 5px;
+      font-size:22px;
+      color:#00d4ff;
+    }
+
+    table{
+      width:100%;
+      border-collapse:collapse;
+      margin-top:15px;
+    }
+
+    th,td{
+      padding:10px;
+      border-bottom:1px solid rgba(255,255,255,0.1);
+      font-size:14px;
+    }
+
+    th{
+      text-align:left;
+      background:rgba(0,212,255,0.1);
+    }
+
+    .badge{
+      padding:4px 8px;
+      border-radius:20px;
+      font-size:12px;
+      font-weight:700;
+    }
+
+    .active{background:#1f9d55;}
+    .suspended{background:#a52a2a;}
+
+    .searchBox{
+      padding:8px;
+      border-radius:8px;
+      border:none;
+      width:200px;
+    }
+
+    .pagination{
+      margin-top:10px;
+    }
+
+    .pagination button{
+      margin-right:5px;
+      padding:6px 10px;
+    }
+  </style>
+</head>
+
+<body>
+<div class="container">
+
+  <div class="topbar">
+    <div class="brand">Growble Admin</div>
+    <button class="btn btn-danger" id="logoutBtn">Logout</button>
+  </div>
+
+  <!-- STATS -->
+  <div class="grid">
+    <div class="card">
+      <h3 id="totalUsers">0</h3>
+      <p>Total Users</p>
+    </div>
+    <div class="card">
+      <h3 id="activeUsers">0</h3>
+      <p>Active (7 days)</p>
+    </div>
+    <div class="card">
+      <h3 id="totalLeads">0</h3>
+      <p>Total Leads</p>
+    </div>
+    <div class="card">
+      <h3 id="totalAutomations">0</h3>
+      <p>Total Automations</p>
+    </div>
+  </div>
+
+  <!-- ANALYTICS CHARTS -->
+<div class="card" style="margin-bottom:20px;">
+  <h2 style="margin-bottom:15px;">Analytics Overview</h2>
+
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;">
+    <div>
+      <canvas id="planChart"></canvas>
+    </div>
+    <div>
+      <canvas id="leadChart"></canvas>
+    </div>
+    <div>
+      <canvas id="growthChart"></canvas>
+    </div>
+  </div>
+</div>
+<!-- USERS TABLE -->
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <h2>Users</h2>
+      <input class="searchBox" id="searchInput" placeholder="Search user..." />
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Plan</th>
+          <th>Status</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody id="usersBody"></tbody>
+    </table>
+
+    <div class="pagination" id="pagination"></div>
+  </div>
+
+</div>
+<script>
+  const token = localStorage.getItem("token");
+  const role = localStorage.getItem("role");
+
+  if (!token || role !== "admin") {
+    window.location.href = "/login.html";
+  }
+</script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="/admin.js"></script>
+</body>
+</html>

@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Upgrade - Growble</title>
+
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box;font-family:Arial,Helvetica,sans-serif}
+    body{
+      min-height:100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:20px;
+      background:linear-gradient(135deg,#0b1220,#082f49);
+      color:white;
+    }
+
+    .card{
+      width:100%;
+      max-width:500px;
+      background:rgba(255,255,255,0.06);
+      border:1px solid rgba(255,255,255,0.12);
+      backdrop-filter: blur(12px);
+      border-radius:18px;
+      padding:26px;
+      box-shadow:0 10px 40px rgba(0,0,0,0.35);
+      text-align:center;
+    }
+
+    .brand{
+      font-size:26px;
+      font-weight:900;
+      color:#00d4ff;
+      margin-bottom:10px;
+    }
+
+    h2{font-size:22px;margin-bottom:10px}
+
+    .price{
+      font-size:42px;
+      font-weight:900;
+      margin:18px 0;
+      color:#00d4ff;
+    }
+
+    ul{
+      list-style:none;
+      text-align:left;
+      margin:18px auto;
+      max-width:360px;
+      opacity:0.9;
+      font-size:14px;
+      line-height:1.8;
+    }
+
+    button{
+      width:100%;
+      padding:13px 16px;
+      border:none;
+      border-radius:12px;
+      background:#00d4ff;
+      color:black;
+      font-size:16px;
+      font-weight:900;
+      cursor:pointer;
+      margin-top:10px;
+    }
+    button:hover{background:#00bce0}
+
+    a{
+      display:inline-block;
+      margin-top:14px;
+      color:#00d4ff;
+      text-decoration:none;
+      font-weight:800;
+      font-size:14px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="card">
+    <div class="brand">Growble</div>
+
+    <h2>Upgrade to <span style="color:#00d4ff">PRO</span></h2>
+    <p style="opacity:0.85">Unlock premium growth features instantly.</p>
+
+    <div class="price">₹499</div>
+
+    <ul>
+      <li>✅ premium tools unlocked</li>
+      <li>✅ exclusive learning plans</li>
+      <li>✅ faster progress system</li>
+      <li>✅ priority updates</li>
+    </ul>
+
+    <button id="payBtn">Upgrade Now</button>
+
+    <a href="/index.html">← Back to Dashboard</a>
+  </div>
+
+  <script src="/payment.js"></script>
+</body>
+</html>

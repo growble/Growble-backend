@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Admin Dashboard – Growble</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f6f9;
+      margin: 0;
+      padding: 20px;
+    }
+    h1 {
+      margin-bottom: 20px;
+    }
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      margin-bottom: 30px;
+    }
+    .card {
+      background: #fff;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+    }
+    .card h2 {
+      margin: 0;
+      font-size: 28px;
+    }
+    .card p {
+      margin: 5px 0 0;
+      color: #666;
+    }
+    .charts {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+    canvas {
+      background: #fff;
+      padding: 15px;
+      border-radius: 10px;
+    }
+    table {
+      width: 100%;
+      background: #fff;
+      border-collapse: collapse;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    th, td {
+      padding: 12px;
+      border-bottom: 1px solid #eee;
+      text-align: left;
+    }
+    th {
+      background: #fafafa;
+    }
+  </style>
+</head>
+
+<body>
+
+<h1>📊 Admin Dashboard</h1>
+
+<!-- SUMMARY CARDS -->
+<div class="cards">
+  <div class="card">
+    <h2 id="totalUsers">0</h2>
+    <p>Total Users</p>
+  </div>
+  <div class="card">
+    <h2 id="activeUsers">0</h2>
+    <p>Active Users</p>
+  </div>
+  <div class="card">
+    <h2 id="totalUsage">0</h2>
+    <p>Total Automations Used</p>
+  </div>
+</div>
+
+<!-- CHARTS -->
+<div class="charts">
+  <canvas id="usageChart"></canvas>
+  <canvas id="planChart"></canvas>
+</div>
+
+<!-- USERS TABLE -->
+<h2>👥 Users & Usage</h2>
+<table>
+  <thead>
+    <tr>
+      <th>User</th>
+      <th>Email</th>
+      <th>Plan</th>
+      <th>Automations Used</th>
+      <th>Status</th>
+    </tr>
+  </thead>
+  <tbody id="usersTable"></tbody>
+</table>
+
+<script>
+const ADMIN_TOKEN = localStorage.getItem("token");
+
+if (!ADMIN_TOKEN) {
+  alert("Admin not logged in");
+  window.location.href = "/admin-login.html";
+}
+
+
+fetch("http://localhost:5000/api/admin/users-usage", {
+  headers: {
+    Authorization: "Bearer " + ADMIN_TOKEN
+  }
+})
+.then(res => res.json())
+.then(users => {
+
+  /* SUMMARY CARDS */
+  document.getElementById("totalUsers").innerText = users.length;
+  document.getElementById("activeUsers").innerText =
+    users.filter(u => u.active).length;
+  document.getElementById("totalUsage").innerText =
+    users.reduce((sum, u) => sum + u.usage, 0);
+
+  /* USERS TABLE */
+  const table = document.getElementById("usersTable");
+  table.innerHTML = "";
+  users.forEach(u => {
+    table.innerHTML += `
+      <tr>
+        <td>${u.name}</td>
+        <td>${u.email}</td>
+        <td>${u.plan}</td>
+        <td>${u.usage}</td>
+        <td>${u.active ? "Active" : "Inactive"}</td>
+      </tr>
+    `;
+  });
+
+  /* BAR CHART */
+  new Chart(document.getElementById("usageChart"), {
+    type: "bar",
+    data: {
+      labels: users.map(u => u.name),
+      datasets: [{
+        label: "Automations Used",
+        data: users.map(u => u.usage)
+      }]
+    }
+  });
+
+  /* PIE CHART */
+  const planCount = {};
+  users.forEach(u => {
+    planCount[u.plan] = (planCount[u.plan] || 0) + 1;
+  });
+
+  new Chart(document.getElementById("planChart"), {
+    type: "pie",
+    data: {
+      labels: Object.keys(planCount),
+      datasets: [{
+        data: Object.values(planCount)
+      }]
+    }
+  });
+
+})
+.catch(err => {
+  console.error("API ERROR:", err);
+  alert("Failed to load admin data");
+});
+
+</script>
+
+</body>
+</html>
