@@ -69,4 +69,8 @@ lostReason: {
 // ✅ Unique phone per user (compound index)
 LeadSchema.index({ user: 1, phone: 1 }, { unique: true });
 
+HEAD:models/Lead.js
 module.exports = mongoose.model("Lead", LeadSchema);
+
+module.exports = mongoose.models.Lead || mongoose.model("Lead", LeadSchema);
+35ac3aa (fix lead model import):models/lead.js
