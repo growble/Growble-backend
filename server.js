@@ -70,6 +70,9 @@ mongoose
   .catch((err) => {
     console.error("MongoDB connection failed ❌", err);
   });
+app.get("/health", (req, res) => {
+  res.status(200).send("Growble server running");
+});
 
 /* 🔹 START SERVER */
 const PORT = process.env.PORT || 5000;
