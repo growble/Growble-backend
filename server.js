@@ -23,6 +23,11 @@ const app = express();
 /* 🔹 GLOBAL MIDDLEWARE */
 app.use(cors());
 
+/* 🔹 HEALTH CHECK */
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "landing.html"));
+});
+
 /* 🔹 STATIC FILES (PAYMENT PAGE) */
 app.use(express.static("public"));
 
@@ -46,11 +51,6 @@ app.use("/api/usage", usageRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/payment", paymentRoutes);
 app.use("/api/user", userRoutes);
-
-/* 🔹 HEALTH CHECK */
-app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "landing.html"));
-});
 
 /* 🔹 PROTECTED TEST ROUTE */
 app.get("/api/protected", authMiddleware, (req, res) => {
