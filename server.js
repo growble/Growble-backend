@@ -28,6 +28,7 @@ app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "landing.html"));
 });
 
+c88f251 (Fix homepage route to show landing page)
 /* 🔹 STATIC FILES (PAYMENT PAGE) */
 app.use(express.static("public"));
 
