@@ -59,6 +59,9 @@ app.get("/api/protected", authMiddleware, (req, res) => {
     user: req.user
   });
 });
+app.get("/", (req, res) => {
+  res.redirect("/landing.html");
+});
 
 /* 🔹 DATABASE + SCHEDULER */
 mongoose
