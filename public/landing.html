@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <title>Growble CRM</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
 
@@ -16,7 +17,7 @@ color:white;
 .container{
 max-width:1200px;
 margin:auto;
-padding:20px;
+padding:20px 15px;
 }
 
 /* NAVBAR */
@@ -206,6 +207,115 @@ footer{
 text-align:center;
 padding:40px;
 opacity:0.6;
+}
+/* =========================
+   MOBILE (max-width: 768px)
+========================= */
+
+@media (max-width: 768px){
+
+/* NAVBAR */
+.nav{
+flex-direction:column;
+align-items:flex-start;
+gap:15px;
+}
+
+.nav div:last-child{
+width:100%;
+display:flex;
+justify-content:space-between;
+}
+
+/* HERO */
+.hero{
+padding:60px 15px;
+}
+
+.hero h1{
+font-size:32px;
+line-height:1.2;
+}
+
+.hero p{
+font-size:16px;
+}
+
+/* PROBLEM */
+.problem{
+padding:40px 20px;
+}
+
+/* FEATURES */
+.features{
+flex-direction:column;
+align-items:center;
+}
+
+.feature{
+width:100%;
+max-width:320px;
+}
+
+/* TESTIMONIALS */
+.testimonials{
+flex-direction:column;
+align-items:center;
+}
+
+.testimonial{
+width:100%;
+max-width:320px;
+}
+
+/* PRICING */
+.pricing{
+flex-direction:column;
+align-items:center;
+}
+
+.plan{
+width:100%;
+max-width:320px;
+}
+
+/* SCREENSHOT */
+.screenshot img{
+width:100%;
+}
+
+/* CTA */
+.cta{
+padding:60px 20px;
+}
+
+/* LOGO FIX */
+.tagline{
+margin-left:0;
+}
+
+}
+
+
+/* =========================
+   SMALL MOBILE (max-width: 480px)
+========================= */
+
+@media (max-width: 480px){
+
+.hero h1{
+font-size:26px;
+}
+
+.btn{
+padding:10px 14px;
+font-size:14px;
+}
+
+.logo img{
+height:42px;
+}
+
 }
 
 </style>

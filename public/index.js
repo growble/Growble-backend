@@ -195,61 +195,73 @@ function showFollowupPopup() {
     duration: 6000
   });
 }
-function getWhatsAppMessage(lead) {
+let cachedTemplates = null;
+
+async function fetchTemplates() {
+  if (cachedTemplates) return cachedTemplates;
+
+  try {
+    const res = await fetch("/api/templates", {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("token")}`
+      }
+    });
+
+    cachedTemplates = await res.json();
+    return cachedTemplates;
+
+  } catch (err) {
+    console.error("Template fetch error:", err);
+    return {};
+  }
+}
+
+function replaceVariables(template, lead) {
+  return template
+    .replace(/{name}/g, lead.name || "there")
+    .replace(/{phone}/g, lead.phone || "");
+}
+
+async function getWhatsAppMessage(lead) {
 
   const defaultTemplates = {
-  new: `Hello {name},
-
-Thank you for contacting our coaching institute.
+    new: `Hello {name},\n\nThank you for contacting our coaching institute.
 
 Would you like details about courses or a demo class?`,
-
-  contacted: `Hello {name},
-
-Just following up on our previous conversation.
+    contacted: `Hello {name},\n\nJust following up on our previous conversation.
 
 Please let me know if you need course details or fee structure.`,
-
-  interested: `Hello {name},
-
-Glad to know you're interested in our classes.
+    interested: `Hello {name},\n\nGlad to know you're interested in our classes.
 
 Would you like to book a demo class this week?`,
+    closed: `Hello {name},\n\nFeel free to contact anytime.`,
+    lost: `Hello {name},\n\nWe noticed you didn’t join earlier.
 
-  closed: `Hello {name},
-
-Thank you for connecting earlier.
-
-If you have any questions in the future, feel free to message anytime.`,
-lost: `Hello {name},
-
-We noticed you didn’t join earlier.
-
-We are offering a **FREE demo class this week** for selected students.
+We are offering a FREE demo class this week for selected students.
 
 Would you like to attend the demo?`
-};
+  };
 
-const savedTemplates = JSON.parse(localStorage.getItem("whatsappTemplates")) || {};
+  const savedTemplates = await fetchTemplates();
 
-const templates = {
-  new: savedTemplates.new || defaultTemplates.new,
-  contacted: savedTemplates.contacted || defaultTemplates.contacted,
-  interested: savedTemplates.interested || defaultTemplates.interested,
-  closed: savedTemplates.closed || defaultTemplates.closed,
-  lost: savedTemplates.lost || defaultTemplates.lost
-};
+  let template =
+    savedTemplates[lead.status] ||
+    defaultTemplates[lead.status] ||
+    "Hello {name}";
 
-  const template = templates[lead.status] || "Hello {name}";
+  // 🔥 auto greeting if missing
+  if (!template.toLowerCase().includes("{name}")) {
+    template = `Hi {name},\n\n` + template;
+  }
 
-  return template.replace("{name}", lead.name || "there");
+  return replaceVariables(template, lead);
 }
-window.sendWhatsApp = function sendWhatsApp(id) {
+window.sendWhatsApp = async function sendWhatsApp(id) {
 
   const lead = leads.find(l => l._id === id);
   if (!lead) return;
 
-  const message = getWhatsAppMessage(lead);
+  const message = await getWhatsAppMessage(lead);
 
   const phone = (lead.phone || "").replace(/\D/g, "");
 
@@ -1025,30 +1037,44 @@ window.deleteLead = function deleteLead(id) {
 
   deleteModal.classList.remove("hidden");
 };
-window.openTemplateEditor = function () {
+window.openTemplateEditor = async function () {
 
   if (currentUserPlan !== "pro") {
-
     showToast({
       title: "🔒 Pro Feature",
       message: "WhatsApp templates are available in Growble Pro.",
       duration: 4000
     });
-
     return;
   }
 
-  const templates = JSON.parse(localStorage.getItem("whatsappTemplates")) || {};
+  try {
+    const res = await fetch("/api/templates", {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("token")}`
+      }
+    });
 
-  document.getElementById("tplNew").value = templates.new || "";
-  document.getElementById("tplContacted").value = templates.contacted || "";
-  document.getElementById("tplInterested").value = templates.interested || "";
-  document.getElementById("tplClosed").value = templates.closed || "";
+    const templates = await res.json();
 
-  document.getElementById("templateModal").classList.remove("hidden");
+    document.getElementById("tplNew").value = templates.new || "";
+    document.getElementById("tplContacted").value = templates.contacted || "";
+    document.getElementById("tplInterested").value = templates.interested || "";
+    document.getElementById("tplClosed").value = templates.closed || "";
 
+    document.getElementById("templateModal").classList.remove("hidden");
+
+  } catch (err) {
+    console.error(err);
+
+    showToast({
+      title: "❌ Error",
+      message: "Failed to load templates",
+      duration: 4000
+    });
+  }
 };
-window.saveTemplates = function () {
+window.saveTemplates = async function () {
 
   const templates = {
     new: document.getElementById("tplNew").value.trim(),
@@ -1057,16 +1083,35 @@ window.saveTemplates = function () {
     closed: document.getElementById("tplClosed").value.trim()
   };
 
-  localStorage.setItem("whatsappTemplates", JSON.stringify(templates));
+  try {
+    const res = await fetch("/api/templates", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("token")}`
+      },
+      body: JSON.stringify({ templates })
+    });
 
-  document.getElementById("templateModal").classList.add("hidden");
+    if (!res.ok) throw new Error("Failed to save");
 
-  showToast({
-    title: "Templates Saved",
-    message: "WhatsApp templates updated successfully.",
-    duration: 4000
-  });
+    document.getElementById("templateModal").classList.add("hidden");
 
+    showToast({
+      title: "Templates Saved",
+      message: "Saved 🚀",
+      duration: 4000
+    });
+
+  } catch (err) {
+    console.error(err);
+
+    showToast({
+      title: "❌ Error",
+      message: "Failed to save templates",
+      duration: 4000
+    });
+  }
 };
 window.closeTemplateModal = function () {
   document.getElementById("templateModal").classList.add("hidden");

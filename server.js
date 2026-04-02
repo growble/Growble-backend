@@ -52,6 +52,7 @@ app.use("/api/usage", usageRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/payment", paymentRoutes);
 app.use("/api/user", userRoutes);
+app.use("/api/templates", require("./routes/templateRoutes"));
 
 /* 🔹 PROTECTED TEST ROUTE */
 app.get("/api/protected", authMiddleware, (req, res) => {
