@@ -19,6 +19,7 @@
     "mongoose": "^8.5.2",
     "node-cron": "^4.2.1",
     "nodemailer": "^8.0.1",
+    "openai": "^6.33.0",
     "razorpay": "^2.9.6"
   },
   "devDependencies": {

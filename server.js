@@ -28,7 +28,6 @@ app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "landing.html"));
 });
 
-c88f251 (Fix homepage route to show landing page)
 /* 🔹 STATIC FILES (PAYMENT PAGE) */
 app.use(express.static("public"));
 
@@ -53,6 +52,7 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/payment", paymentRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/templates", require("./routes/templateRoutes"));
+app.use("/api/ai", require("./routes/aiRoutes"));
 
 /* 🔹 PROTECTED TEST ROUTE */
 app.get("/api/protected", authMiddleware, (req, res) => {

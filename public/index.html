@@ -641,5 +641,26 @@ lost lead reasons and trends.
   <script src="/index.js"></script>
 <!-- ✅ Toast Container -->
 <div id="toastContainer"></div>
+<div id="aiModal" class="modal hidden">
+  <div class="modal-box">
+    <h2>AI Message Generator</h2>
+
+    <input id="aiPrompt"
+      placeholder="Example: Student asked fees but didn't reply"
+    />
+
+    <div style="margin-top:10px;">
+      <button class="btn btn-primary" onclick="generateAI()">
+        Generate
+      </button>
+      <button class="btn btn-danger" onclick="closeAIModal()">
+        Close
+      </button>
+    </div>
+
+    <textarea id="aiResult"
+      style="width:100%;margin-top:15px;height:100px;"></textarea>
+  </div>
+</div>
 </body>
 </html>

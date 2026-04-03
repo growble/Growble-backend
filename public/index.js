@@ -449,6 +449,11 @@ if (quickActionsBox) {
       onclick="openTemplateEditor()">
       ✏ Edit WhatsApp Templates
     </button>
+<button class="btn btn-primary"
+  style="width:100%;margin-top:10px"
+  onclick="openAIGenerator()">
+  🤖 Generate WhatsApp Message
+</button>
   `;
 
 } else {
@@ -1144,6 +1149,58 @@ cancelLostBtn.addEventListener("click", () => {
   lostReasonModal.classList.add("hidden");
 
 });
+window.openAIGenerator = function () {
+  document.getElementById("aiModal").classList.remove("hidden");
+};
+
+window.closeAIModal = function () {
+  document.getElementById("aiModal").classList.add("hidden");
+};
+
+window.generateAI = async function () {
+
+  const prompt = document.getElementById("aiPrompt").value;
+
+  if (!prompt) {
+    showToast({
+      title: "⚠ Enter prompt",
+      message: "Describe situation first",
+      duration: 3000
+    });
+    return;
+  }
+
+  const resultBox = document.getElementById("aiResult");
+  resultBox.value = "Generating...";
+
+  try {
+    const res = await fetch("/api/ai/generate", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("token")}`
+      },
+      body: JSON.stringify({ prompt })
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) throw new Error(data.message);
+
+    resultBox.value = data.message;
+
+  } catch (err) {
+    console.error(err);
+
+    resultBox.value = "Failed to generate";
+
+    showToast({
+      title: "❌ AI Error",
+      message: "Try again",
+      duration: 4000
+    });
+  }
+};
 
 // =====================
 // INIT
