@@ -66,7 +66,39 @@ lastPaymentId: {
   // ✅ ADD THIS INSIDE MAIN OBJECT
     lastLogin: {
       type: Date
-    }
+    },
+businessName: {
+  type: String,
+  trim: true
+},
+
+businessType: {
+  type: String,
+  trim: true
+},
+
+offer: {
+  type: String,
+  trim: true
+},
+
+knowledgeBase: {
+  type: String,
+  default: ""
+},
+
+businessInfo: {
+  pricing: String,
+  services: String,
+  timings: String,
+  faqs: String,
+  policies: String,
+  offers: String
+},
+
+whatsappPhoneId:String,
+whatsappToken:String,
+verifyToken:String,
 
   },
   {

@@ -7,6 +7,8 @@ const auth = require("../middleware/authMiddleware");
 const { requireProPlan } = require("../middleware/planMiddleware");
 const handleLeadAutomation = require("../services/automationService");
 const checkAutomationUsage = require("../middleware/automationUsageMiddleware");
+const sendWhatsAppMessage = require("../utils/whatsappSender");
+const generateMessage = require("../utils/aiMessage");
 
 /**
  * @route   POST /api/leads
@@ -32,11 +34,23 @@ router.post("/", auth, async (req, res) => {
       notes,
 nextFollowUpAt: nextFollowUpAt ? new Date(nextFollowUpAt) : null,
     });
+await lead.save();
+// after lead saved
+const user = await User.findById(req.user._id);
 
-    await lead.save();
+const aiMsg = await generateMessage({
+  message: `New lead added:
+Name: ${lead.name}
+Phone: ${lead.phone}`,
+  user
+});
+
+await sendWhatsAppMessage({
+  phone: lead.phone,
+  message: aiMsg
+});
+
 // 🎁 START FREE TRIAL WHEN FIRST LEAD ADDED
-const user = await User.findById(req.user.id);
-
 if (user.plan === "free" && !user.planExpiresAt) {
 
   user.plan = "pro";
@@ -104,10 +118,12 @@ router.put("/:id", auth, async (req, res) => {
   try {
     const { status, notes, nextFollowUpAt, followUpDate, name, phone, lostReason } = req.body;
 
-    const lead = await Lead.findOne({
-      _id: req.params.id,
-      user: req.user._id,
-    });
+    const lead = await Lead
+.findOne({
+  _id: req.params.id,
+  user: req.user._id
+})
+.populate("user");
 
     if (!lead) {
       return res.status(404).json({ message: "Lead not found" });
@@ -156,8 +172,6 @@ if (notes !== undefined) {
     action: `Notes updated`
   });
 }
-
-await lead.save();
 
     // ✅ automation only for PRO
     if (req.user.plan === "pro") {
@@ -266,9 +280,13 @@ router.post("/:id/send-whatsapp", auth, async (req, res) => {
       });
     }
 
-    const message = `Hello ${lead.name}, just following up with you.`;
+    const message =
+await generateMessage({
+message:"follow up customer",
+user:lead.user
+});
 
-    const { sendWhatsAppMessage } = require("../services/whatsappService");
+    const sendWhatsAppMessage = require("../utils/whatsappSender");
 
     await sendWhatsAppMessage({
       phone: lead.phone,

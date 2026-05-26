@@ -4,6 +4,13 @@ const cors = require("cors");
 const mongoose = require("mongoose");
 const path = require("path");
 require("dotenv").config();
+require("./cron/followUp");
+const uploadBrochure=
+
+require(
+"./routes/uploadBrochure"
+);
+
 
 /* 🔹 ROUTES */
 const usageRoutes = require("./routes/usageRoutes");
@@ -16,7 +23,6 @@ const userRoutes = require("./routes/user.routes");
 
 /* 🔹 MIDDLEWARES */
 const authMiddleware = require("./middleware/authMiddleware");
-const startFollowUpScheduler = require("./services/followUpScheduler");
 
 const app = express();
 
@@ -53,6 +59,14 @@ app.use("/api/payment", paymentRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/templates", require("./routes/templateRoutes"));
 app.use("/api/ai", require("./routes/aiRoutes"));
+app.use("/webhook", require("./routes/webhook"));
+app.use(
+
+"/api/upload-brochure",
+
+uploadBrochure
+
+);
 
 /* 🔹 PROTECTED TEST ROUTE */
 app.get("/api/protected", authMiddleware, (req, res) => {
@@ -67,7 +81,6 @@ mongoose
   .connect(process.env.MONGO_URI)
   .then(() => {
     console.log("MongoDB connected successfully");
-    startFollowUpScheduler();
   })
   .catch((err) => {
     console.error("MongoDB connection failed ❌", err);

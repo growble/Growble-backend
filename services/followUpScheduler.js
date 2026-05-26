@@ -83,5 +83,4 @@ const startFollowUpScheduler = () => {
 
   console.log("⏳ Follow-up scheduler started");
 };
-
 module.exports = startFollowUpScheduler;

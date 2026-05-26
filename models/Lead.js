@@ -60,7 +60,16 @@ lostReason: {
         action: String,
         date: { type: Date, default: Date.now }
       }
-    ]
+    ],
+followUpStep: {
+  type: Number,
+  default: 0
+},
+lastMessageAt: Date,
+replied: {
+  type: Boolean,
+  default: false
+}
   },
   {
     timestamps: true

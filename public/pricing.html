@@ -1,0 +1,1116 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+
+<title>Growble Pricing</title>
+
+<link
+href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap"
+rel="stylesheet"
+/>
+
+<style>
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:'Inter',sans-serif;
+}
+
+body{
+
+background:
+linear-gradient(
+135deg,
+#020617,
+#07152a,
+#0a1931
+);
+
+color:white;
+
+overflow-x:hidden;
+
+}
+
+.container{
+
+max-width:1450px;
+
+margin:auto;
+
+padding:60px 20px;
+
+}
+
+.hero{
+
+text-align:center;
+
+margin-bottom:55px;
+
+}
+
+.logo{
+
+font-size:48px;
+
+font-weight:800;
+
+margin-bottom:15px;
+
+}
+
+.green{
+
+color:#22ff88;
+
+}
+
+.hero h1{
+
+font-size:68px;
+
+margin-bottom:20px;
+
+}
+
+.hero p{
+
+font-size:20px;
+
+color:#9aa7b8;
+
+}
+
+.toggle{
+
+display:flex;
+
+justify-content:center;
+
+margin:45px 0;
+
+}
+
+.toggle-box{
+
+background:#111827;
+
+padding:8px;
+
+border-radius:50px;
+
+display:flex;
+
+gap:8px;
+
+}
+
+.toggle button{
+
+padding:12px 24px;
+
+border:none;
+
+background:none;
+
+color:white;
+
+font-weight:700;
+
+cursor:pointer;
+
+border-radius:40px;
+
+}
+
+.active{
+
+background:#22ff88;
+
+color:black!important;
+
+}
+
+.cards{
+
+display:grid;
+
+grid-template-columns:
+repeat(
+auto-fit,
+minmax(300px,1fr)
+);
+
+gap:25px;
+
+}
+
+.card{
+
+background:
+
+rgba(255,255,255,.04);
+
+padding:35px;
+
+border-radius:28px;
+
+border:
+1px solid
+rgba(255,255,255,.08);
+
+backdrop-filter:
+blur(15px);
+
+position:relative;
+
+transition:.3s;
+
+}
+
+.card:hover{
+
+transform:
+translateY(-8px);
+
+box-shadow:
+0 0 35px
+rgba(34,255,136,.15);
+
+}
+
+.free{
+
+border-top:
+5px solid #3b82f6;
+
+}
+
+.starter{
+
+border-top:
+5px solid #22ff88;
+
+}
+
+.pro{
+
+border-top:
+5px solid #a855f7;
+
+transform:scale(1.03);
+
+}
+
+.agent{
+
+border-top:
+5px solid #ffb800;
+
+}
+
+.badge{
+
+position:absolute;
+
+top:18px;
+
+right:18px;
+
+padding:6px 12px;
+
+border-radius:40px;
+
+font-size:12px;
+
+font-weight:700;
+
+}
+
+.popular{
+
+background:#a855f7;
+
+}
+
+.best{
+
+background:#ffb800;
+
+color:black;
+
+}
+
+.card h2{
+
+font-size:34px;
+
+margin-bottom:8px;
+
+}
+
+.desc{
+
+color:#9ca9b8;
+
+margin-bottom:18px;
+
+}
+
+.price{
+
+font-size:58px;
+
+font-weight:800;
+
+margin:20px 0;
+
+}
+
+.price span{
+
+font-size:18px;
+
+opacity:.7;
+
+}
+
+.btn{
+
+width:100%;
+
+padding:15px;
+
+border:none;
+
+border-radius:15px;
+
+font-size:17px;
+
+font-weight:700;
+
+cursor:pointer;
+
+margin-bottom:25px;
+
+}
+
+.free .btn{
+
+background:#3b82f6;
+
+}
+
+.starter .btn{
+
+background:#22ff88;
+
+color:black;
+
+}
+
+.pro .btn{
+
+background:#a855f7;
+
+color:white;
+
+}
+
+.agent .btn{
+
+background:#ffb800;
+
+}
+
+.feature{
+
+padding:10px 0;
+
+border-bottom:
+1px solid
+rgba(255,255,255,.06);
+
+font-size:15px;
+
+}
+
+.section{
+
+margin-top:90px;
+
+}
+
+.section h2{
+
+text-align:center;
+
+font-size:40px;
+
+margin-bottom:40px;
+
+}
+
+.roi{
+
+background:
+rgba(255,255,255,.04);
+
+padding:40px;
+
+border-radius:25px;
+
+text-align:center;
+
+}
+
+.roi input{
+
+padding:14px;
+
+margin:10px;
+
+width:220px;
+
+border:none;
+
+background:#111827;
+
+color:white;
+
+border-radius:12px;
+
+}
+
+.roi button{
+
+padding:14px 30px;
+
+background:#22ff88;
+
+border:none;
+
+border-radius:12px;
+
+font-weight:700;
+
+cursor:pointer;
+
+}
+
+#result{
+
+margin-top:20px;
+
+font-size:28px;
+
+color:#22ff88;
+
+}
+
+table{
+
+width:100%;
+
+border-collapse:collapse;
+
+background:
+rgba(255,255,255,.04);
+
+overflow:hidden;
+
+border-radius:20px;
+
+}
+
+th,td{
+
+padding:18px;
+
+text-align:center;
+
+border-bottom:
+1px solid
+rgba(255,255,255,.08);
+
+}
+
+th{
+
+background:#111827;
+
+}
+
+.faq{
+
+background:
+rgba(255,255,255,.04);
+
+padding:22px;
+
+margin-bottom:14px;
+
+border-radius:18px;
+
+}
+
+.cta{
+
+margin-top:80px;
+
+background:
+
+linear-gradient(
+135deg,
+#22ff88,
+#00b86a
+);
+
+padding:70px;
+
+border-radius:30px;
+
+text-align:center;
+
+color:black;
+
+}
+
+.cta h2{
+
+font-size:48px;
+
+margin-bottom:15px;
+
+}
+
+.cta button{
+
+padding:18px 40px;
+
+border:none;
+
+border-radius:15px;
+
+font-size:18px;
+
+font-weight:800;
+
+cursor:pointer;
+
+margin-top:20px;
+
+}
+
+@media(max-width:768px){
+
+.hero h1{
+
+font-size:42px;
+
+}
+
+.pro{
+
+transform:none;
+
+}
+
+.roi input{
+
+width:100%;
+
+}
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<div class="hero">
+
+<div class="logo">
+
+🟢 Growble
+
+</div>
+
+<h1>
+
+Simple Plans.
+
+<span class="green">
+
+Powerful Growth.
+
+</span>
+
+</h1>
+
+<p>
+
+AI powered WhatsApp follow-ups to grow your business.
+
+</p>
+
+</div>
+
+<div class="toggle">
+
+<div class="toggle-box">
+
+<button class="active">
+
+Monthly
+
+</button>
+
+<button>
+
+Yearly Save 20%
+
+</button>
+
+</div>
+
+</div>
+
+<div class="cards">
+
+<div class="card free">
+
+<h2>Free</h2>
+
+<p class="desc">
+
+Lead management starter
+
+</p>
+
+<div class="price">
+
+₹0 <span>/month</span>
+
+</div>
+
+<button class="btn">
+
+Start Free
+
+</button>
+
+<div class="feature">✅ Lead Management</div>
+<div class="feature">✅ 50 Follow-ups/month</div>
+<div class="feature">✅ Basic Analytics</div>
+<div class="feature">❌ WhatsApp Integration</div>
+<div class="feature">❌ AI Replies</div>
+<div class="feature">❌ AI Sales Agent</div>
+<div class="feature">❌ Knowledge Base AI</div>
+<div class="feature">❌ AI Lead Qualification</div>
+<div class="feature">👤 Team Members: 1</div>
+<div class="feature">📧 Email Support</div>
+
+</div>
+
+<div class="card starter">
+
+<h2>Starter</h2>
+
+<p class="desc">
+
+Automation for growing teams
+
+</p>
+
+<div class="price">
+
+₹499 <span>/month</span>
+
+</div>
+
+<button class="btn">
+
+Start Starter
+
+</button>
+
+<div class="feature">✅ Lead Management</div>
+<div class="feature">✅ Unlimited Follow-ups</div>
+<div class="feature">✅ WhatsApp Integration</div>
+<div class="feature">✅ Templates</div>
+<div class="feature">✅ Business Knowledge Base</div>
+<div class="feature">✅ Basic Analytics</div>
+<div class="feature">👥 Team Members: 2</div>
+<div class="feature">❌ AI Replies</div>
+<div class="feature">⭐ Priority Support</div>
+
+</div>
+
+<div class="card pro">
+
+<div class="badge popular">
+
+POPULAR
+
+</div>
+
+<h2>
+
+Pro AI
+
+</h2>
+
+<p class="desc">
+
+AI employee for business
+
+</p>
+
+<div class="price">
+
+₹999 <span>/month</span>
+
+</div>
+
+<button class="btn">
+
+Start Pro AI
+
+</button>
+
+<div class="feature">✅ Everything Starter</div>
+<div class="feature">✅ AI Replies</div>
+<div class="feature">✅ AI Lead Qualification</div>
+<div class="feature">✅ Hot Lead Detection</div>
+<div class="feature">✅ Human Takeover</div>
+<div class="feature">✅ Advanced Analytics</div>
+<div class="feature">👥 Unlimited Team</div>
+
+</div>
+
+<div class="card agent">
+
+<div class="badge best">
+
+BEST VALUE
+
+</div>
+
+<h2>
+
+AI Sales Agent
+
+</h2>
+
+<p class="desc">
+
+AI sells 24×7
+
+</p>
+
+<div class="price">
+
+₹1499 <span>/month</span>
+
+</div>
+
+<button class="btn">
+
+Get AI Agent
+
+</button>
+
+<div class="feature">✅ Everything Pro</div>
+<div class="feature">✅ AI Sales Agent</div>
+<div class="feature">✅ Objection Handling</div>
+<div class="feature">✅ Smart Nurturing</div>
+<div class="feature">✅ Conversion Boost</div>
+<div class="feature">✅ VIP Support</div>
+
+</div>
+
+</div>
+
+<div class="section">
+
+<h2>
+
+Revenue Recovery Calculator
+
+</h2>
+
+<div class="roi">
+
+<input
+id="lead"
+placeholder="Leads/month"
+type="number"
+/>
+
+<input
+id="sale"
+placeholder="Average sale ₹"
+type="number"
+/>
+
+<br><br>
+
+<button onclick="calc()">
+
+Calculate
+
+</button>
+
+<div id="result">
+
+</div>
+
+</div>
+
+</div>
+
+<div class="section">
+
+<h2>
+
+Compare Features
+
+</h2>
+
+<table>
+
+<tr>
+
+<th>Feature</th>
+<th>Free</th>
+<th>Starter</th>
+<th>Pro</th>
+<th>AI Agent</th>
+
+</tr>
+
+<tr>
+
+<td>Lead Management</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+
+</tr>
+
+<tr>
+
+<td>AI Replies</td>
+<td>❌</td>
+<td>❌</td>
+<td>✅</td>
+<td>✅</td>
+
+</tr>
+
+<tr>
+
+<td>AI Sales Agent</td>
+<td>❌</td>
+<td>❌</td>
+<td>❌</td>
+<td>✅</td>
+
+</tr>
+
+<tr>
+
+<td>Analytics</td>
+<td>Basic</td>
+<td>Basic</td>
+<td>Advanced</td>
+<td>Advanced</td>
+
+</tr>
+
+</table>
+
+</div>
+
+<div class="section">
+
+<h2>
+
+FAQ
+
+</h2>
+
+<div class="faq">
+
+<b>
+
+What is AI Replies?
+
+</b>
+
+<p>
+
+AI answers customer questions automatically.
+
+</p>
+
+</div>
+
+<div class="faq">
+
+<b>
+
+What is AI Sales Agent?
+
+</b>
+
+<p>
+
+AI sells and nurtures leads automatically.
+
+</p>
+
+</div>
+
+</div>
+
+<div class="cta">
+
+<h2>
+
+Still losing leads?
+
+</h2>
+
+<p>
+
+Growble follows up automatically.
+
+</p>
+
+<button>
+
+Start Free
+
+</button>
+
+</div>
+
+</div>
+
+<script>
+
+const monthlyPrices = {
+
+starter:499,
+
+pro:999,
+
+agent:1499
+
+};
+
+const yearlyPrices = {
+
+starter:4790,
+
+pro:9590,
+
+agent:14390
+
+};
+
+const monthlyBtn =
+document
+.querySelectorAll(
+".toggle button"
+)[0];
+
+const yearlyBtn =
+document
+.querySelectorAll(
+".toggle button"
+)[1];
+
+const starterPrice =
+document
+.querySelector(
+".starter .price"
+);
+
+const proPrice =
+document
+.querySelector(
+".pro .price"
+);
+
+const agentPrice =
+document
+.querySelector(
+".agent .price"
+);
+
+function updatePricing(type){
+
+if(type==="yearly"){
+
+starterPrice.innerHTML=
+
+`₹${yearlyPrices.starter}
+
+<span>
+
+/year
+
+</span>`;
+
+proPrice.innerHTML=
+
+`₹${yearlyPrices.pro}
+
+<span>
+
+/year
+
+</span>`;
+
+agentPrice.innerHTML=
+
+`₹${yearlyPrices.agent}
+
+<span>
+
+/year
+
+</span>`;
+
+monthlyBtn
+.classList
+.remove(
+"active"
+);
+
+yearlyBtn
+.classList
+.add(
+"active"
+);
+
+}else{
+
+starterPrice.innerHTML=
+
+`₹${monthlyPrices.starter}
+
+<span>
+
+/month
+
+</span>`;
+
+proPrice.innerHTML=
+
+`₹${monthlyPrices.pro}
+
+<span>
+
+/month
+
+</span>`;
+
+agentPrice.innerHTML=
+
+`₹${monthlyPrices.agent}
+
+<span>
+
+/month
+
+</span>`;
+
+yearlyBtn
+.classList
+.remove(
+"active"
+);
+
+monthlyBtn
+.classList
+.add(
+"active"
+);
+
+}
+
+}
+
+monthlyBtn
+.addEventListener(
+"click",
+()=>updatePricing(
+"monthly"
+)
+);
+
+yearlyBtn
+.addEventListener(
+"click",
+()=>updatePricing(
+"yearly"
+)
+);
+
+function calc(){
+
+let lead=
+
++document
+.getElementById(
+"lead"
+)
+.value;
+
+let sale=
+
++document
+.getElementById(
+"sale"
+)
+.value;
+
+let revenue=
+
+Math.floor(
+lead*.15
+)
+
+* sale;
+
+document
+.getElementById(
+"result"
+)
+.innerHTML=
+
+`Potential recovered revenue ₹${revenue.toLocaleString()}`;
+
+}
+
+</script>
+
+</body>
+
+</html>

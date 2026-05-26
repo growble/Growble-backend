@@ -96,23 +96,24 @@ localStorage.clear();
 
 localStorage.setItem("token", data.token);
 localStorage.setItem("role", data.user.role);
+localStorage.setItem("userId", data.user._id);
 
-// 🔥 Redirect based on role
+// 🔥 Decide redirect based on onboarding
+let redirectUrl = "/index.html";
+
 if (data.user.role === "admin") {
-  showToast({
-    type: "success",
-    title: "Admin Login Successful 🚀",
-    msg: "Welcome to Admin Dashboard!",
-    redirectUrl: "/admin.html"
-  });
-} else {
-  showToast({
-    type: "success",
-    title: "Login Successful 🎉",
-    msg: "Welcome back to Growble!",
-    redirectUrl: "/index.html"
-  });
+  redirectUrl = "/admin.html";
+} else if (!data.user.businessName) {
+  redirectUrl = "/onboarding.html";
 }
+
+// ✅ Show toast with correct redirect
+showToast({
+  type: "success",
+  title: "Login Successful 🎉",
+  msg: "Welcome to Growble!",
+  redirectUrl
+});
 
   } catch (err) {
     console.error(err);
