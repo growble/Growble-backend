@@ -382,7 +382,7 @@ btn.innerHTML=
 setTimeout(()=>{
 
 window.location=
-"/index";
+"/index.html";
 
 },1000);
 
