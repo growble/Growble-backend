@@ -382,7 +382,7 @@ btn.innerHTML=
 setTimeout(()=>{
 
 window.location=
-"/dashboard";
+"/index";
 
 },1000);
 
