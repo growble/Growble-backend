@@ -22,9 +22,15 @@ services
 faq
 
 usage
+planExpiresAt
+
 `);
     const PLAN_LIMITS =
 require("../config/planLimits");
+
+const limits =
+PLAN_LIMITS[user.plan] ||
+PLAN_LIMITS.free;
 
 res.json({
   success: true,
@@ -43,26 +49,29 @@ res.json({
       user.usage?.aiReplies || 0,
 
     aiRepliesLimit:
-      PLAN_LIMITS[user.plan].aiReplies,
+      limits.aiReplies,
 
     followUpsUsed:
       user.usage?.followUps || 0,
 
     followUpsLimit:
-      PLAN_LIMITS[user.plan].followUps,
+      limits.followUps,
 
     aiQualificationUsed:
       user.usage?.aiQualification || 0,
 
     aiQualificationLimit:
-      PLAN_LIMITS[user.plan]
-      .aiQualification
+      limits.aiQualification
   }
 });
 
   } catch (err) {
-    res.status(500).json({ success: false, message: "server error" });
-  }
+  console.error("/api/user/me error:", err);
+  res.status(500).json({
+    success: false,
+    message: "server error"
+  });
+}
 });
 
 // ✅ Save business details
