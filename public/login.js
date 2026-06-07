@@ -103,9 +103,8 @@ let redirectUrl = "/index.html";
 
 if (data.user.role === "admin") {
   redirectUrl = "/admin.html";
-} else if (!data.user.businessName) {
-  redirectUrl = "/onboarding.html";
 }
+
 
 // ✅ Show toast with correct redirect
 showToast({

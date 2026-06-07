@@ -10,11 +10,13 @@ require("multer");
 const fs=
 require("fs");
 
-const pdf=
-require("pdf-parse");
+const pdfParse = require("pdf-parse");
 
 const User =
 require("../models/User");
+
+const auth =
+require("../middleware/authMiddleware");
 
 const storage=
 
@@ -58,19 +60,13 @@ storage
 });
 
 router.post(
-
 "/",
-
-upload.single(
-"pdf"
-),
-
+auth,
+upload.single("pdf"),
 async(req,res)=>{
 
 try{
 
-const userId=
-req.body.userId;
 
 const filePath=
 req.file.path;
@@ -81,32 +77,30 @@ fs.readFileSync(
 filePath
 );
 
-const pdfData=
-
-await pdf(
-buffer
-);
+const pdfData =
+await pdfParse(buffer);
 
 const text=
 
 pdfData.text;
 
-const knowledge={
-
-brochureText:
-text
-
-};
 
 await User.updateOne(
 {
-_id:userId
+  _id:req.user._id
 },
 {
 $set:{
-knowledgeBase:knowledge
+knowledgeBase:text
 }
 }
+);
+
+const updatedUser = await User.findById(req.user._id);
+
+console.log(
+"Knowledge Base Saved:",
+updatedUser.knowledgeBase
 );
 
 const learned=
@@ -121,6 +115,7 @@ x=>x.trim()
 fs.unlinkSync(
 filePath
 );
+
 
 res.json({
 

@@ -69,6 +69,34 @@ lastMessageAt: Date,
 replied: {
   type: Boolean,
   default: false
+},
+
+// AI Fields
+aiScore: {
+  type: Number,
+  default: 0
+},
+
+aiSummary: {
+  type: String,
+  default: ""
+},
+
+aiNextAction: {
+  type: String,
+  default: ""
+},
+
+aiSentiment: {
+  type: String,
+  enum: ["positive","neutral","negative"],
+  default: "neutral"
+},
+
+aiLeadTemperature: {
+  type: String,
+  enum: ["cold","warm","hot"],
+  default: "cold"
 }
   },
   {

@@ -1,12 +1,21 @@
 const fields=[
 
 "businessName",
+
+"businessType",
+
 "offer",
+
 "fees",
+
 "hours",
+
 "services",
+
 "refund",
+
 "faq",
+
 "extra"
 
 ];
@@ -233,32 +242,21 @@ formData.append(
 file
 );
 
-formData.append(
-
-"userId",
-
-localStorage.getItem(
-"userId"
-)
-
-);
 
 try{
 
 const res=
 
 await fetch(
-
 "/api/upload-brochure",
-
 {
-
-method:"POST",
-
-body:formData
-
+  method:"POST",
+  headers:{
+    Authorization:
+      `Bearer ${localStorage.getItem("token")}`
+  },
+  body:formData
 }
-
 );
 
 const data=
@@ -342,13 +340,7 @@ document
 
 });
 
-payload.userId=
-
-localStorage.getItem(
-"userId"
-);
-
-const res=
+const res =
 
 await fetch(
 
@@ -361,7 +353,10 @@ method:"POST",
 headers:{
 
 "Content-Type":
-"application/json"
+"application/json",
+
+Authorization:
+`Bearer ${localStorage.getItem("token")}`
 
 },
 

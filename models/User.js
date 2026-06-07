@@ -2,6 +2,7 @@ const mongoose = require("mongoose");
 
 const UserSchema = new mongoose.Schema(
   {
+
     name: {
       type: String,
       required: true,
@@ -27,9 +28,9 @@ const UserSchema = new mongoose.Schema(
     },
 
     plan: {
-      type: String,
-      enum: ["free", "starter", "pro"],
-      default: "free"
+  type: String,
+  enum: ["free", "starter", "pro", "agent"],
+  default: "free"
     },
 planExpiresAt: {
   type: Date
@@ -42,6 +43,35 @@ lastPaymentId: {
 
 
     automationUsage: {
+usage: {
+  aiReplies: {
+    type: Number,
+    default: 0
+  },
+
+  aiQualification: {
+    type: Number,
+    default: 0
+  },
+
+  followUps: {
+    type: Number,
+    default: 0
+  },
+
+  resetAt: {
+    type: Date,
+    default: () => {
+      const now = new Date();
+
+      return new Date(
+        now.getFullYear(),
+        now.getMonth() + 1,
+        1
+      );
+    }
+  }
+},
       count: {
         type: Number,
         default: 0
@@ -86,6 +116,25 @@ knowledgeBase: {
   type: String,
   default: ""
 },
+tone: {
+  type: String,
+  default: ""
+},
+
+services: {
+  type: String,
+  default: ""
+},
+
+faq: {
+  type: String,
+  default: ""
+},
+
+aiSetupCompleted: {
+  type: Boolean,
+  default: false
+},
 
 businessInfo: {
   pricing: String,
@@ -101,6 +150,7 @@ whatsappToken:String,
 verifyToken:String,
 
   },
+
   {
     timestamps: true
   }

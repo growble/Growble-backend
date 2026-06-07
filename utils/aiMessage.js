@@ -9,6 +9,27 @@ message,
 user
 }) => {
 
+const PLAN_LIMITS =
+require("../config/planLimits");
+
+const dbUser =
+await require("../models/User")
+.findById(user._id);
+
+const limit =
+PLAN_LIMITS[dbUser.plan]?.aiReplies || 0;
+
+if (!dbUser.usage) {
+  dbUser.usage = {
+    aiReplies: 0,
+    followUps: 0
+  };
+}
+
+if ((dbUser.usage.aiReplies || 0) >= limit) {
+  return "AI reply limit reached. Upgrade your plan.";
+}
+
 const lower =
 message.toLowerCase();
 
@@ -94,6 +115,11 @@ temperature:0.7,
 max_tokens:120
 
 });
+
+dbUser.usage.aiReplies =
+(dbUser.usage.aiReplies || 0) + 1;
+
+await dbUser.save();
 
 return response
 .choices[0]

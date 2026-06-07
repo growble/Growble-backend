@@ -20,8 +20,17 @@ router.post("/create-order", auth, async (req, res) => {
     const userId = req.user.id;
 
     // 🔖 2. Plan & amount (backend controlled)
-    const plan = "pro";
-    const amount = 499; // ₹499
+    const { plan } = req.body;
+    const PLAN_PRICES = {
+
+ starter: 499,
+ pro: 999,
+ agent: 1499
+
+};
+
+const amount =
+PLAN_PRICES[plan];
 
     // 🧾 3. Create Razorpay order with NOTES
     const order = await razorpay.orders.create({

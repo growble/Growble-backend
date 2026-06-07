@@ -357,7 +357,18 @@ async function loadUser() {
     });
 
     const data = await res.json();
-if (data.user.plan === "pro" && data.user.planExpiresAt) {
+const usage =
+data.usage || {};
+
+console.log(
+"Usage:",
+usage
+);
+if (
+  (data.user.plan === "pro" ||
+   data.user.plan === "agent") &&
+  data.user.planExpiresAt
+) {
 
   showToast({
     title: "🎉 Free Trial Started",
@@ -402,14 +413,84 @@ if (data.planExpiringSoon) {
     const name = data?.user?.name || "User";
     const email = data?.user?.email || "";
     const plan = data?.user?.plan || "free";
+const businessName =
+data?.user?.businessName || "";
+
+const businessType =
+data?.user?.businessType || "";
+
+const offer =
+data?.user?.offer || "";
+
+const tone =
+data?.user?.tone || "";
+
+const knowledgeBase =
+data?.user?.knowledgeBase || "";
     currentUserPlan = plan;
+const aiBox =
+document.getElementById(
+"aiBusinessContent"
+);
+
+if(aiBox){
+
+aiBox.innerHTML =
+
+`
+<div>
+
+Business:
+<b>
+${businessName}
+</b>
+
+</div>
+
+<div>
+
+Industry:
+${businessType}
+
+</div>
+
+<div>
+
+Offer:
+${offer}
+
+</div>
+
+<div>
+
+Tone:
+${tone}
+
+</div>
+
+<div>
+
+Knowledge:
+${
+knowledgeBase
+? "AI trained ✅"
+: "Not trained ❌"
+}
+
+</div>
+`;
+
+}
 
     
 // ✅ Handle Upgrade Button Visibility
 const upgradeContainer = document.getElementById("upgradeBtnContainer");
 
 if (upgradeContainer) {
-  if (plan.toLowerCase() !== "pro") {
+  if (
+  plan.toLowerCase() !== "pro" &&
+  plan.toLowerCase() !== "agent"
+) {
     upgradeContainer.innerHTML = `
       <button class="btn btn-outline"
         onclick="window.location.href='/payment.html'">
@@ -421,15 +502,36 @@ if (upgradeContainer) {
   }
 }
 
-    document.getElementById("userMini").innerHTML =
-      `<b>${escapeHtml(name)}</b> • ${escapeHtml(email)}<br/>Plan: <b style="color:#00d4ff">${escapeHtml(plan)}</b>`;
+    document.getElementById("userMini").innerHTML = `
+<b>${escapeHtml(name)}</b> • ${escapeHtml(email)}
+<br>
+Plan: <b style="color:#00d4ff">${escapeHtml(plan)}</b>
+
+<br>
+
+🤖 AI Replies:
+${usage.aiRepliesUsed || 0}/${usage.aiRepliesLimit || 0}
+
+<br>
+
+🎯 AI Qualification:
+${usage.aiQualificationUsed || 0}/${usage.aiQualificationLimit || 0}
+
+<br>
+
+📲 Follow-ups:
+${usage.followUpsUsed || 0}/${usage.followUpsLimit || 0}
+`;
 
     // ✅ Lock quick action if NOT pro
     const quickActionsBox = document.getElementById("quickActionsBox");
 
 if (quickActionsBox) {
 
-  if (plan === "pro") {
+  if (
+  plan === "pro" ||
+  plan === "agent"
+) {
 
   quickActionsBox.innerHTML = `
     <button class="btn btn-primary"
@@ -562,7 +664,10 @@ function renderLostAnalytics(list){
   if(!currentUserPlan) return;
 
   // 🔒 Free plan lock
-  if(currentUserPlan !== "pro"){
+  if (
+  currentUserPlan !== "pro" &&
+  currentUserPlan !== "agent"
+){
     box.innerHTML = `
       <div style="
         padding:15px;
@@ -588,7 +693,10 @@ function renderLostAnalytics(list){
   }
 
   // 🔒 LOCK FOR FREE USERS
-  if(currentUserPlan !== "pro"){
+  if (
+  currentUserPlan !== "pro" &&
+  currentUserPlan !== "agent"
+) {
     box.innerHTML = `
       <div style="
         padding:15px;
@@ -766,6 +874,23 @@ tr.className = followupRowClass(l.nextFollowUpAt);
               : l.notes)
           : ""
       )}
+<div
+style="
+margin-top:6px;
+font-size:12px;
+">
+
+🧠 ${l.aiLeadTemperature || "cold"}
+
+•
+
+🎯 ${l.aiScore || 0}/100
+
+<br>
+
+${l.aiNextAction || ""}
+
+</div>
     </span>
   </td>
   <td>${statusBadge(l.status)}</td>
@@ -773,38 +898,41 @@ tr.className = followupRowClass(l.nextFollowUpAt);
     <b>${formatDate(l.nextFollowUpAt)}</b><br/>
     <span class="small">${followText}</span>
   </td>
-  <td style="display:flex; gap:8px; flex-wrap:wrap;">
+  <td>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;">
 
-  <button class="btn btn-outline"
-    onclick="openEditLead('${l._id}')">
-    Edit
-  </button>
+    <button class="btn btn-outline"
+      onclick="openEditLead('${l._id}')">
+      Edit
+    </button>
 
-  ${
-currentUserPlan === "pro"
-? `
-<button class="btn btn-primary"
-  onclick="sendWhatsApp('${l._id}')">
-  WhatsApp
-</button>
-`
-: `
-<button class="btn btn-outline"
-  onclick="showToast({
-    title:'🔒 Pro Feature',
-    message:'WhatsApp messaging is available in Growble Pro.',
-    duration:4000
-  })">
-  WhatsApp 🔒
-</button>
-`
-}
+    ${
+      currentUserPlan === "pro" ||
+      currentUserPlan === "agent"
+      ? `
+      <button class="btn btn-primary"
+        onclick="sendWhatsApp('${l._id}')">
+        WhatsApp
+      </button>
+      `
+      : `
+      <button class="btn btn-outline"
+        onclick="showToast({
+          title:'🔒 Pro Feature',
+          message:'WhatsApp messaging is available in Growble Pro.',
+          duration:4000
+        })">
+        WhatsApp 🔒
+      </button>
+      `
+    }
 
-  <button class="btn btn-danger"
-    onclick="deleteLead('${l._id}')">
-    Delete
-  </button>
+    <button class="btn btn-danger"
+      onclick="deleteLead('${l._id}')">
+      Delete
+    </button>
 
+  </div>
 </td>
 `;
 
@@ -908,7 +1036,10 @@ window.openEditLead = function openEditLead(id) {
 const logBox = document.getElementById("activityLogBox");
 const activitySection = document.getElementById("activitySection");
 
-if (currentUserPlan !== "pro") {
+if (
+  currentUserPlan !== "pro" &&
+  currentUserPlan !== "agent"
+) {
 
   activitySection.style.display = "block";
 
@@ -1044,7 +1175,10 @@ window.deleteLead = function deleteLead(id) {
 };
 window.openTemplateEditor = async function () {
 
-  if (currentUserPlan !== "pro") {
+  if (
+  currentUserPlan !== "pro" &&
+  currentUserPlan !== "agent"
+) {
     showToast({
       title: "🔒 Pro Feature",
       message: "WhatsApp templates are available in Growble Pro.",

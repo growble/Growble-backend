@@ -8,7 +8,15 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
 });
 
-router.post("/generate", auth, async (req, res) => {
+const checkPlan =
+require("../middleware/checkPlan");
+
+router.post(
+  "/generate",
+  auth,
+  checkPlan("starter", "pro", "agent"),
+  async (req, res) => {
+
   try {
     const { prompt } = req.body;
 

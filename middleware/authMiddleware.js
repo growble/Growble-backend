@@ -58,8 +58,22 @@ if (user.role !== "admin") {
     // ✅ Attach user to request
     req.user = user;
     next();
-  } catch (err) {
-    console.error("Auth middleware error:", err);
-    res.status(401).json({ message: "Invalid or expired token" });
+}
+
+  catch (err) {
+
+  if (err.name === "TokenExpiredError") {
+    return res.status(401).json({
+      tokenExpired: true,
+      message: "Session expired. Please login again."
+    });
   }
+
+  console.error("Auth middleware error:", err);
+
+  res.status(401).json({
+    message: "Invalid token"
+  });
+}
+
 };

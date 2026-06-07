@@ -59,10 +59,20 @@ router.post(
         // ⏳ 6. Decide plan duration
         let daysToAdd = 0;
 
-        if (plan === "pro") {
-          daysToAdd = 30;
-          user.plan = "pro";
-        }
+       if(plan === "starter"){
+ user.plan = "starter";
+ daysToAdd = 30;
+}
+
+if(plan === "pro"){
+ user.plan = "pro";
+ daysToAdd = 30;
+}
+
+if(plan === "agent"){
+ user.plan = "agent";
+ daysToAdd = 30;
+}
 
         // 📅 7. Extend plan expiry
         user.planExpiresAt = extendPlan(user.planExpiresAt, daysToAdd);

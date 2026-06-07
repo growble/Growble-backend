@@ -3,11 +3,8 @@ const Lead = require("../models/Lead");
 const User = require("../models/User");
 const { sendWhatsAppMessage } = require("./whatsappService");
 
-const PLAN_LIMITS = {
-  free: 0,
-  starter: 50,
-  pro: Infinity
-};
+const PLAN_LIMITS =
+require("../config/planLimits");
 
 const startFollowUpScheduler = () => {
   cron.schedule("* * * * *", async () => {
@@ -33,6 +30,9 @@ const startFollowUpScheduler = () => {
 
         // 🔁 Monthly reset
         if (now >= user.automationUsage.resetAt) {
+user.usage.followUps = 0;
+user.usage.aiReplies = 0;
+user.usage.aiQualification = 0;
           user.automationUsage.count = 0;
           user.automationUsage.resetAt = new Date(
             now.getFullYear(),
@@ -41,7 +41,9 @@ const startFollowUpScheduler = () => {
           );
         }
 
-        const limit = PLAN_LIMITS[user.plan];
+        const limit =
+PLAN_LIMITS[user.plan]
+.followUps;
 
         if (limit === 0) {
           console.log(`🚫 Blocked (plan=${user.plan})`);
@@ -67,6 +69,8 @@ const startFollowUpScheduler = () => {
         });
 
         user.automationUsage.count += 1;
+
+user.usage.followUps += 1;
 
         console.log(
           `✅ WhatsApp sent | Usage ${user.automationUsage.count}/${limit}`

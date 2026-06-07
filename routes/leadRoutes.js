@@ -9,6 +9,111 @@ const handleLeadAutomation = require("../services/automationService");
 const checkAutomationUsage = require("../middleware/automationUsageMiddleware");
 const sendWhatsAppMessage = require("../utils/whatsappSender");
 const generateMessage = require("../utils/aiMessage");
+function calculateLeadAI(lead){
+
+let score = 50;
+
+if(lead.status === "interested"){
+score += 30;
+}
+
+if(lead.status === "contacted"){
+score += 15;
+}
+
+if(lead.status === "closed"){
+score = 100;
+}
+
+if(lead.status === "lost"){
+score = 5;
+}
+
+if(lead.notes){
+
+const text = lead.notes.toLowerCase();
+
+if(
+text.includes("fees") ||
+text.includes("price")
+){
+score += 10;
+}
+
+if(
+text.includes("demo")
+){
+score += 15;
+}
+
+if(
+text.includes("not interested")
+){
+score -= 25;
+}
+
+}
+
+const overdue =
+lead.nextFollowUpAt &&
+new Date(lead.nextFollowUpAt)
+< new Date();
+
+if(overdue){
+score -= 15;
+}
+
+score =
+Math.max(
+0,
+Math.min(100,score)
+);
+
+let temperature = "cold";
+
+if(score >= 80){
+temperature = "hot";
+}
+else if(score >= 55){
+temperature = "warm";
+}
+
+let nextAction =
+"Follow up in 2 days";
+
+if(score >= 80){
+nextAction =
+"Call immediately";
+}
+else if(overdue){
+nextAction =
+"Send WhatsApp today";
+}
+
+return {
+
+aiScore:score,
+
+aiLeadTemperature:
+temperature,
+
+aiSentiment:
+score >= 70
+? "positive"
+: score >= 40
+? "neutral"
+: "negative",
+
+aiSummary:
+`Lead ${lead.status}.
+Current score ${score}.`,
+
+aiNextAction:
+nextAction
+
+};
+
+}
 
 /**
  * @route   POST /api/leads
@@ -34,21 +139,50 @@ router.post("/", auth, async (req, res) => {
       notes,
 nextFollowUpAt: nextFollowUpAt ? new Date(nextFollowUpAt) : null,
     });
+const ai =
+calculateLeadAI(lead);
+
+lead.aiScore =
+ai.aiScore;
+
+lead.aiLeadTemperature =
+ai.aiLeadTemperature;
+
+lead.aiSentiment =
+ai.aiSentiment;
+
+lead.aiSummary =
+ai.aiSummary;
+
+lead.aiNextAction =
+ai.aiNextAction;
+
 await lead.save();
-// after lead saved
+
 const user = await User.findById(req.user._id);
 
-const aiMsg = await generateMessage({
-  message: `New lead added:
+try {
+
+  const aiMsg = await generateMessage({
+    message: `New lead added:
 Name: ${lead.name}
 Phone: ${lead.phone}`,
-  user
-});
+    user
+  });
 
-await sendWhatsAppMessage({
-  phone: lead.phone,
-  message: aiMsg
-});
+  await sendWhatsAppMessage({
+    phone: lead.phone,
+    message: aiMsg
+  });
+
+} catch (err) {
+
+  console.error(
+    "AI/WhatsApp Error:",
+    err.message
+  );
+
+}
 
 // 🎁 START FREE TRIAL WHEN FIRST LEAD ADDED
 if (user.plan === "free" && !user.planExpiresAt) {
@@ -147,6 +281,23 @@ if (status === "lost") {
     if (followUpDate !== undefined) lead.followUpDate = followUpDate;
 
     lead.lastContactedAt = new Date();
+const ai =
+calculateLeadAI(lead);
+
+lead.aiScore =
+ai.aiScore;
+
+lead.aiLeadTemperature =
+ai.aiLeadTemperature;
+
+lead.aiSentiment =
+ai.aiSentiment;
+
+lead.aiSummary =
+ai.aiSummary;
+
+lead.aiNextAction =
+ai.aiNextAction;
     // Create activity log if not exists
 if (!lead.activityLog) {
   lead.activityLog = [];
@@ -173,15 +324,21 @@ if (notes !== undefined) {
   });
 }
 
-    // ✅ automation only for PRO
-    if (req.user.plan === "pro") {
-      await handleLeadAutomation(lead, previousStatus);
-    }
+   // ✅ automation only for PRO
+if (
+  req.user.plan === "pro" ||
+  req.user.plan === "agent"
+) {
+  await handleLeadAutomation(lead, previousStatus);
+}
 
-    res.status(200).json({
-      message: "Lead updated successfully",
-      lead,
-    });
+// 🔥 SAVE CHANGES TO DATABASE
+await lead.save();
+
+res.status(200).json({
+  message: "Lead updated successfully",
+  lead,
+});
   } catch (error) {
     console.error("Update lead error:", error);
     if (error.code === 11000) {
