@@ -5,26 +5,8 @@ const User = require("../models/User");
 
 router.get("/me", auth, async (req, res) => {
   try {
-    const user = await User.findById(req.user.id)
-.select(`
-name
-email
-plan
-planActivatedAt
+    const user = req.user;
 
-businessName
-businessType
-offer
-
-knowledgeBase
-tone
-services
-faq
-
-usage
-planExpiresAt
-
-`);
     const PLAN_LIMITS =
 require("../config/planLimits");
 
