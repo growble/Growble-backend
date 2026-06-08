@@ -8,7 +8,7 @@ router.get("/me", auth, async (req, res) => {
     const user = req.user;
 
     const PLAN_LIMITS =
-require("../config/planLimits");
+require("../config/PlanLimits");
 
 const limits =
 PLAN_LIMITS[user.plan] ||
