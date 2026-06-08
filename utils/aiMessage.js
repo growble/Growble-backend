@@ -10,7 +10,7 @@ user
 }) => {
 
 const PLAN_LIMITS =
-require("../config/planLimits");
+require("../config/PlanLimits");
 
 const dbUser =
 await require("../models/User")
