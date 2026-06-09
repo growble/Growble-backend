@@ -64,7 +64,7 @@ reply=
 
       await sendWhatsAppMessage({
         phone: from,
-        message: aiReply
+        message: reply
       });
     }
 
