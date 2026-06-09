@@ -16,6 +16,8 @@ router.get("/", (req, res) => {
 });
 
 router.post("/", async (req, res) => {
+  console.log("Webhook hit");
+console.log(JSON.stringify(req.body, null, 2));
   try {
     const entry = req.body.entry?.[0];
     const changes = entry?.changes?.[0];
