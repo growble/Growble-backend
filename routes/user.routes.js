@@ -96,7 +96,14 @@ user.services = services;
 user.faq = faq;
 
 // AI knowledge base
+const existingKnowledge =
+user.knowledgeBase || "";
+
 user.knowledgeBase = `
+
+${existingKnowledge}
+
+--------------------
 
 Business Name:
 ${businessName}
