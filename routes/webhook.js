@@ -29,7 +29,13 @@ router.post("/", async (req, res) => {
 
       // ✅ STOP FOLLOW-UP
       const lead = await Lead.findOne({ phone: from });
-const user = lead ? await require("../models/User").findById(lead.user) : null;
+const User = require("../models/User");
+
+const user = lead
+ ? await User.findById(lead.user).lean()
+ : null;
+      console.log("FULL USER:");
+console.log(JSON.stringify(user, null, 2));
 console.log("===== WEBHOOK DEBUG =====");
 console.log("Lead User ID:", lead?.user);
 console.log("User Found:", !!user);
