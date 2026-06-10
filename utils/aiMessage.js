@@ -12,9 +12,7 @@ user
 const PLAN_LIMITS =
 require("../config/PlanLimits");
 
-const dbUser =
-await require("../models/User")
-.findById(user._id);
+const dbUser = user;
 
   console.log("===== AI DEBUG =====");
 console.log("Business:", dbUser.businessName);
