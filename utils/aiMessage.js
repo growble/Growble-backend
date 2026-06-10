@@ -16,6 +16,17 @@ const dbUser =
 await require("../models/User")
 .findById(user._id);
 
+  console.log("===== AI DEBUG =====");
+console.log("Business:", dbUser.businessName);
+console.log("Plan:", dbUser.plan);
+console.log("Knowledge length:",
+  dbUser.knowledgeBase?.length
+);
+console.log(
+  dbUser.knowledgeBase?.substring(0, 1000)
+);
+console.log("====================");
+
 const limit =
 PLAN_LIMITS[dbUser.plan]?.aiReplies || 0;
 
