@@ -62,10 +62,12 @@ reply=
 
 }
 
-      await sendWhatsAppMessage({
-        phone: from,
-        message: aiReply
-      });
+      console.log("AI Reply:", reply);
+
+await sendWhatsAppMessage({
+  phone: from,
+  message: reply
+});
     }
 
     res.sendStatus(200);
