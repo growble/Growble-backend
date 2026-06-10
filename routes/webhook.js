@@ -30,6 +30,13 @@ router.post("/", async (req, res) => {
       // ✅ STOP FOLLOW-UP
       const lead = await Lead.findOne({ phone: from });
 const user = lead ? await require("../models/User").findById(lead.user) : null;
+console.log("===== WEBHOOK DEBUG =====");
+console.log("Lead User ID:", lead?.user);
+console.log("User Found:", !!user);
+console.log("User Object:", user);
+console.log("Business:", user?.businessName);
+console.log("Knowledge Length:", user?.knowledgeBase?.length);
+console.log("========================");
       if (lead) {
         lead.replied = true;
         lead.status = "interested";
