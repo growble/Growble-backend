@@ -35,6 +35,15 @@ const user = lead
  ? await User.findById(lead.user)
  : null;
 
+if (lead && text) {
+  lead.conversation.push({
+    role: "user",
+    content: text
+  });
+
+  await lead.save();
+}
+
       if (lead) {
         lead.replied = true;
         lead.status = "interested";
@@ -54,10 +63,11 @@ user &&
 user.plan==="pro"
 ){
 
-reply=
+reply =
 await generateMessage({
-message:text,
-user
+  message: text,
+  user,
+  lead
 });
 
 }else{
@@ -68,6 +78,28 @@ reply=
 }
 
       console.log("AI Reply:", reply);
+if (lead) {
+  lead.conversation.push({
+    role: "assistant",
+    content: reply
+  });
+
+  await lead.save();
+}
+
+const lowerText = text.toLowerCase();
+
+if (
+  lead &&
+  (
+    lowerText.includes("call me") ||
+    lowerText.includes("interested") ||
+    lowerText.includes("book demo")
+  )
+) {
+  lead.aiLeadTemperature = "hot";
+  await lead.save();
+}
 
 await sendWhatsAppMessage({
   phone: from,

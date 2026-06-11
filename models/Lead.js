@@ -71,6 +71,42 @@ replied: {
   default: false
 },
 
+requirement: {
+  type: String,
+  default: ""
+},
+
+budget: {
+  type: String,
+  default: ""
+},
+
+timeline: {
+  type: String,
+  default: ""
+},
+
+industry: {
+  type: String,
+  default: ""
+},
+
+qualificationScore: {
+  type: Number,
+  default: 0
+},
+
+conversation: [
+  {
+    role: String,
+    content: String,
+    createdAt: {
+      type: Date,
+      default: Date.now
+    }
+  }
+],
+
 // AI Fields
 aiScore: {
   type: Number,

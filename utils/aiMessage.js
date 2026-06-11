@@ -6,7 +6,8 @@ apiKey: process.env.OPENAI_API_KEY
 
 const generateMessage = async ({
 message,
-user
+user,
+lead
 }) => {
 
 const PLAN_LIMITS =
@@ -64,6 +65,16 @@ ${user?.offer || "Services"}
 Business Knowledge:
 
 ${user?.knowledgeBase || "No information added"}
+Lead Information:
+
+Requirement:
+${lead?.requirement || "Unknown"}
+
+Budget:
+${lead?.budget || "Unknown"}
+
+Timeline:
+${lead?.timeline || "Unknown"}
 
 Goal:
 
@@ -90,6 +101,19 @@ share them.
 when the requested information is NOT available in Business Knowledge.
 
 6. Keep replies short and WhatsApp-friendly.
+
+7. If customer is interested, ask ONE qualification question.
+
+8. Collect:
+- Requirement
+- Budget
+- Timeline
+
+9. Ask only one question at a time.
+
+10. Keep replies under 40 words.
+
+11. Continue the conversation naturally.
 
 `;
 
