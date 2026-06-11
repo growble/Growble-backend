@@ -1,3 +1,9 @@
+console.log("WA_PHONE_ID:", process.env.WA_PHONE_ID);
+console.log("TOKEN EXISTS:", !!process.env.WA_ACCESS_TOKEN);
+console.log(
+  "TOKEN PREFIX:",
+  process.env.WA_ACCESS_TOKEN?.substring(0, 15)
+);
 const axios = require("axios");
 
 const sendWhatsAppMessage = async ({ phone, message }) => {
