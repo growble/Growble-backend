@@ -35,7 +35,10 @@ const user = lead
  ? await User.findById(lead.user).lean()
  : null;
       console.log("FULL USER:");
-console.log(JSON.stringify(user, null, 2));
+console.log("User ID:", user?._id);
+console.log("Name:", user?.name);
+console.log("Business:", user?.businessName);
+console.log("Knowledge Length:", user?.knowledgeBase?.length);
 console.log("===== WEBHOOK DEBUG =====");
 console.log("Lead User ID:", lead?.user);
 console.log("User Found:", !!user);
