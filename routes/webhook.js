@@ -32,20 +32,9 @@ router.post("/", async (req, res) => {
 const User = require("../models/User");
 
 const user = lead
- ? await User.findById(lead.user).lean()
+ ? await User.findById(lead.user)
  : null;
-      console.log("FULL USER:");
-console.log("User ID:", user?._id);
-console.log("Name:", user?.name);
-console.log("Business:", user?.businessName);
-console.log("Knowledge Length:", user?.knowledgeBase?.length);
-console.log("===== WEBHOOK DEBUG =====");
-console.log("Lead User ID:", lead?.user);
-console.log("User Found:", !!user);
-console.log("User Object:", user);
-console.log("Business:", user?.businessName);
-console.log("Knowledge Length:", user?.knowledgeBase?.length);
-console.log("========================");
+
       if (lead) {
         lead.replied = true;
         lead.status = "interested";

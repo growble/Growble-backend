@@ -14,31 +14,28 @@ require("../config/PlanLimits");
 
 const dbUser = user;
 
-  console.log("===== AI DEBUG =====");
-console.log("Business:", dbUser.businessName);
-console.log("Plan:", dbUser.plan);
-console.log("Knowledge length:",
-  dbUser.knowledgeBase?.length
-);
-console.log(
-  dbUser.knowledgeBase?.substring(0, 1000)
-);
-console.log("====================");
+console.log("===== AI DEBUG =====");
 
 const limit =
 PLAN_LIMITS[dbUser.plan]?.aiReplies || 0;
 
-if (!dbUser.usage) {
-  dbUser.usage = {
+if (!dbUser.automationUsage) {
+  dbUser.automationUsage = {};
+}
+
+if (!dbUser.automationUsage.usage) {
+  dbUser.automationUsage.usage = {
     aiReplies: 0,
+    aiQualification: 0,
     followUps: 0
   };
 }
 
-if ((dbUser.usage.aiReplies || 0) >= limit) {
+if (
+  (dbUser.automationUsage.usage.aiReplies || 0) >= limit
+) {
   return "AI reply limit reached. Upgrade your plan.";
 }
-
 const lower =
 message.toLowerCase();
 
@@ -123,8 +120,8 @@ max_tokens:120
 
 });
 
-dbUser.usage.aiReplies =
-(dbUser.usage.aiReplies || 0) + 1;
+dbUser.automationUsage.usage.aiReplies =
+(dbUser.automationUsage.usage.aiReplies || 0) + 1;
 
 await dbUser.save();
 
