@@ -107,6 +107,31 @@ conversation: [
   }
 ],
 
+ownerAlertSent: {
+  type: Boolean,
+  default: false
+},
+
+demoRequested: {
+  type: Boolean,
+  default: false
+},
+
+callbackRequested: {
+  type: Boolean,
+  default: false
+},
+
+demoDate: {
+  type: String,
+  default: ""
+},
+
+demoTime: {
+  type: String,
+  default: ""
+},
+
 // AI Fields
 aiScore: {
   type: Number,

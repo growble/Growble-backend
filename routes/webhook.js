@@ -24,6 +24,7 @@ router.post("/", async (req, res) => {
     if (message) {
       const from = message.from;
       const text = message.text?.body;
+const lowerText = text.toLowerCase();
 
       console.log("Incoming:", text);
 
@@ -52,6 +53,18 @@ if (lead && text) {
         console.log("🛑 Automation stopped for", lead.name);
       }
 
+if (
+  lead &&
+  (
+    lowerText.includes("demo") ||
+    lowerText.includes("show me") ||
+    lowerText.includes("how it works")
+  )
+) {
+  lead.demoRequested = true;
+  await lead.save();
+}
+
       // ✅ AI REPLY
       const generateMessage = require("../utils/aiMessage");
       const sendWhatsAppMessage = require("../utils/whatsappSender");
@@ -77,6 +90,23 @@ reply=
 
 }
 
+const lowerConversation =
+JSON.stringify(
+  lead?.conversation || []
+).toLowerCase();
+
+if (
+  lead &&
+  lead.requirement &&
+  lead.budget &&
+  lead.timeline
+) {
+  lead.aiLeadTemperature = "hot";
+  await lead.save();
+}
+
+
+
       console.log("AI Reply:", reply);
 if (lead) {
   lead.conversation.push({
@@ -87,7 +117,7 @@ if (lead) {
   await lead.save();
 }
 
-const lowerText = text.toLowerCase();
+
 
 if (
   lead &&
