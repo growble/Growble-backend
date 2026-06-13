@@ -119,23 +119,29 @@ when the requested information is NOT available in Business Knowledge.
 
 try {
 
+const history =
+(lead?.conversation || [])
+.slice(-10)
+.map(msg => ({
+  role: msg.role,
+  content: msg.content
+}));
+
 const response =
 await openai.chat.completions.create({
 
 model:"gpt-4o-mini",
 
 messages:[
-
 {
 role:"system",
 content:systemPrompt
 },
-
+...history,
 {
 role:"user",
 content:message
 }
-
 ],
 
 temperature:0.7,
@@ -148,6 +154,24 @@ dbUser.automationUsage.usage.aiReplies =
 (dbUser.automationUsage.usage.aiReplies || 0) + 1;
 
 await dbUser.save();
+
+if (lead) {
+
+  if (
+    !lead.requirement &&
+    lower.includes("lead")
+  ) {
+    lead.requirement = "Lead Management";
+  }
+
+  if (
+    lower.includes("500 leads")
+  ) {
+    lead.requirement = "Lead Follow-up";
+  }
+
+  await lead.save();
+}
 
 return response
 .choices[0]
