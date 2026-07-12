@@ -11,4 +11,18 @@ router.get("/status", authMiddleware, async (req, res) => {
   });
 });
 
+router.post("/exchange-code", authMiddleware, async (req, res) => {
+
+    const { code } = req.body;
+
+    console.log("Received authorization code:", code);
+
+    // We'll implement the Meta token exchange next.
+    return res.json({
+        success: true,
+        message: "Authorization code received.",
+        code
+    });
+
+});
 module.exports = router;
