@@ -3,7 +3,8 @@ const router = express.Router();
 const Lead = require("../models/Lead");
 
 router.get("/", (req, res) => {
-  const VERIFY_TOKEN = "growble_token";
+  const VERIFY_TOKEN =
+process.env.WEBHOOK_VERIFY_TOKEN;
 
   const mode = req.query["hub.mode"];
   const token = req.query["hub.verify_token"];
@@ -132,8 +133,15 @@ if (
 }
 
 await sendWhatsAppMessage({
-  phone: from,
-  message: reply
+
+phone: from,
+
+message: reply,
+
+accessToken: user.whatsapp.accessToken,
+
+phoneNumberId: user.whatsapp.phoneNumberId
+
 });
     }
 

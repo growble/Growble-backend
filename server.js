@@ -25,6 +25,7 @@ const leadRoutes = require("./routes/leadRoutes");
 const paymentRoutes = require("./routes/payment.routes");
 const razorpayWebhookRoutes = require("./routes/razorpayWebhook.routes");
 const userRoutes = require("./routes/user.routes");
+const metaRoutes = require("./routes/meta.routes");
 
 /* 🔹 MIDDLEWARES */
 const authMiddleware = require("./middleware/authMiddleware");
@@ -72,6 +73,7 @@ app.use(
 uploadBrochure
 
 );
+app.use("/api/meta", metaRoutes);
 
 /* 🔹 PROTECTED TEST ROUTE */
 app.get("/api/protected", authMiddleware, (req, res) => {

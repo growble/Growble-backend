@@ -145,9 +145,61 @@ businessInfo: {
   offers: String
 },
 
-whatsappPhoneId:String,
-whatsappToken:String,
-verifyToken:String,
+// WhatsApp Cloud API
+whatsapp: {
+  connected: {
+    type: Boolean,
+    default: false
+  },
+
+  businessId: {
+    type: String,
+    default: ""
+  },
+
+  businessAccountId: {
+    type: String,
+    default: ""
+  },
+
+  wabaId: {
+    type: String,
+    default: ""
+  },
+
+  phoneNumberId: {
+    type: String,
+    default: ""
+  },
+
+  phoneNumber: {
+    type: String,
+    default: ""
+  },
+
+  accessToken: {
+    type: String,
+    default: ""
+  },
+
+  verifyToken: {
+    type: String,
+    default: ""
+  },
+
+  displayName: {
+    type: String,
+    default: ""
+  },
+
+  connectedAt: {
+    type: Date
+  },
+
+  lastSyncedAt: {
+    type: Date
+  }
+},
 
   },
 

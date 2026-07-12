@@ -1,16 +1,24 @@
-console.log("WA_PHONE_ID:", process.env.WA_PHONE_ID);
-console.log("TOKEN EXISTS:", !!process.env.WA_ACCESS_TOKEN);
-console.log(
-  "TOKEN PREFIX:",
-  process.env.WA_ACCESS_TOKEN?.substring(0, 15)
-);
 const axios = require("axios");
 
-const sendWhatsAppMessage = async ({ phone, message }) => {
+const sendWhatsAppMessage = async ({
+  phone,
+  message,
+  accessToken,
+  phoneNumberId
+}) => {
+
+  if (!accessToken) {
+    throw new Error("Missing WhatsApp Access Token");
+  }
+
+  if (!phoneNumberId) {
+    throw new Error("Missing Phone Number ID");
+  }
+
   try {
-console.log("📦 Sending:", { phone, message });
+
     await axios.post(
-      `https://graph.facebook.com/v18.0/${process.env.WA_PHONE_ID}/messages`,
+      `https://graph.facebook.com/v23.0/${phoneNumberId}/messages`,
       {
         messaging_product: "whatsapp",
         to: phone,
@@ -21,16 +29,24 @@ console.log("📦 Sending:", { phone, message });
       },
       {
         headers: {
-          Authorization: `Bearer ${process.env.WA_ACCESS_TOKEN}`,
+          Authorization: `Bearer ${accessToken}`,
           "Content-Type": "application/json"
         }
       }
     );
 
-    console.log("✅ Message sent:", phone);
+    console.log("✅ WhatsApp sent:", phone);
+
   } catch (err) {
-    console.error("❌ WhatsApp Error:", err.response?.data || err.message);
+
+    console.error(
+      err.response?.data || err.message
+    );
+
+    throw err;
+
   }
+
 };
 
 module.exports = sendWhatsAppMessage;
