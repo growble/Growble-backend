@@ -1,6 +1,10 @@
 const CONFIG_ID = "1565714841620288";
 
 document.getElementById("connectBtn").addEventListener("click", () => {
+const button = document.getElementById("connectBtn");
+
+button.disabled = true;
+button.innerText = "Connecting...";
 
     if (typeof FB === "undefined") {
         alert("Facebook SDK not loaded.");
@@ -18,28 +22,46 @@ document.getElementById("connectBtn").addEventListener("click", () => {
                     response.authResponse.code
                 );
 
-                fetch("/api/meta/exchange-code", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
-                    credentials: "include",
-                    body: JSON.stringify({
-                        code: response.authResponse.code
-                    })
-                })
+                const token = localStorage.getItem("token");
+
+fetch("/api/meta/exchange-code", {
+    method: "POST",
+    headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify({
+        code: response.authResponse.code
+    })
+})
                 .then(r => r.json())
                 .then(data => {
                     console.log(data);
 
                     if (data.success) {
-                        alert("✅ WhatsApp connected successfully.");
+                        alert(
+    `✅ Connected!\n\n${data.data.displayName}\n${data.data.phoneNumber}`
+);
                         window.location.href = "/dashboard";
-                    } else {
-                        alert(data.message || "Connection failed.");
-                    }
+                   } else {
+
+    button.disabled = false;
+    button.innerText = "Connect WhatsApp";
+
+    alert(data.message || "Connection failed.");
+
+}
                 })
-                .catch(console.error);
+                .catch(err => {
+
+    console.error(err);
+
+    button.disabled = false;
+    button.innerText = "Connect WhatsApp";
+
+    alert("Unable to connect WhatsApp.");
+
+});
 
             } else {
 

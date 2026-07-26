@@ -63,10 +63,25 @@ PLAN_LIMITS[user.plan]
 
         const message = `Hi ${lead.name}, this is a reminder from Growble regarding your enquiry.`;
 
-        await sendWhatsAppMessage({
-          phone: lead.phone,
-          message
-        });
+// Skip users who haven't connected WhatsApp yet
+if (
+  !user.whatsapp ||
+  !user.whatsapp.connected ||
+  !user.whatsapp.accessToken ||
+  !user.whatsapp.phoneNumberId
+) {
+  console.log(
+    `⚠️ WhatsApp not connected for user ${user._id}. Skipping follow-up.`
+  );
+  continue;
+}
+
+await sendWhatsAppMessage({
+  phone: lead.phone,
+  message,
+  accessToken: user.whatsapp.accessToken,
+  phoneNumberId: user.whatsapp.phoneNumberId
+});
 
         user.automationUsage.count += 1;
 
