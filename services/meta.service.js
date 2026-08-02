@@ -1,7 +1,7 @@
 const axios = require("axios");
 const User = require("../models/User");
 
-const GRAPH_VERSION = "v25.0";
+const GRAPH_VERSION = "v26.0";
 const GRAPH_URL = `https://graph.facebook.com/${GRAPH_VERSION}`;
 async function graphRequest({
   method = "GET",
