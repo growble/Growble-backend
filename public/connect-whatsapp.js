@@ -74,7 +74,7 @@ fetch("/api/meta/exchange-code", {
             config_id: CONFIG_ID,
             response_type: "code",
             override_default_response_type: true,
-            extras: {
+            extras: {"version":"v4"}
                 feature: "whatsapp_embedded_signup",
                 sessionInfoVersion: 3
             }
