@@ -6,7 +6,7 @@ router.get("/login",(req,res)=>{
 
 const url=
 
-`https://www.facebook.com/v23.0/dialog/oauth
+`https://www.facebook.com/v25.0/dialog/oauth
 
 ?client_id=${process.env.META_APP_ID}
 
