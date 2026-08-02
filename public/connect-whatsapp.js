@@ -1,4 +1,4 @@
-const CONFIG_ID = "1565714841620288";
+const CONFIG_ID = "2153460132259021";
 
 document.getElementById("connectBtn").addEventListener("click", () => {
 const button = document.getElementById("connectBtn");
