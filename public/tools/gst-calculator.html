@@ -1,0 +1,1248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
+  <meta
+    name="description"
+    content="Free GST Calculator India by Growble. Calculate GST, CGST, SGST and IGST instantly. Add or remove GST from any amount."
+  >
+
+  <meta
+    name="keywords"
+    content="GST calculator, GST calculator India, GST calculator online, CGST SGST calculator, IGST calculator, GST calculation"
+  >
+
+  <meta name="robots" content="index, follow">
+
+  <title>
+    GST Calculator India - Free GST Calculator | Growble
+  </title>
+
+  <style>
+
+    /* =====================================
+       RESET
+    ===================================== */
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: Arial, sans-serif;
+    }
+
+
+    /* =====================================
+       BODY
+    ===================================== */
+
+    body {
+
+      min-height: 100vh;
+
+      color: white;
+
+      background:
+        linear-gradient(
+          135deg,
+          #07111f,
+          #1a1530
+        );
+
+      padding: 20px;
+    }
+
+
+    /* =====================================
+       CONTAINER
+    ===================================== */
+
+    .container {
+
+      width: 100%;
+      max-width: 1050px;
+
+      margin: auto;
+    }
+
+
+    /* =====================================
+       HEADER
+    ===================================== */
+
+    header {
+
+      text-align: center;
+
+      padding:
+        20px
+        10px
+        30px;
+    }
+
+
+    .logo {
+
+      font-size: 38px;
+
+      font-weight: 900;
+
+      color: #00d4ff;
+
+      letter-spacing: -1px;
+    }
+
+
+    .tagline {
+
+      margin-top: 7px;
+
+      opacity: .75;
+
+      font-size: 15px;
+    }
+
+
+    /* =====================================
+       MAIN CARD
+    ===================================== */
+
+    .calculator-card {
+
+      background:
+        rgba(
+          255,
+          255,
+          255,
+          .055
+        );
+
+      border:
+        1px solid
+        rgba(
+          255,
+          255,
+          255,
+          .1
+        );
+
+      border-radius: 24px;
+
+      padding: 30px;
+
+      backdrop-filter: blur(18px);
+
+      box-shadow:
+        0 10px 60px
+        rgba(
+          0,
+          0,
+          0,
+          .4
+        );
+    }
+
+
+    /* =====================================
+       TITLE
+    ===================================== */
+
+    .calculator-title {
+
+      text-align: center;
+
+      margin-bottom: 25px;
+    }
+
+
+    .calculator-title h1 {
+
+      font-size: 28px;
+
+      margin-bottom: 8px;
+    }
+
+
+    .calculator-title p {
+
+      opacity: .7;
+
+      font-size: 14px;
+    }
+
+
+    /* =====================================
+       MODE BUTTONS
+    ===================================== */
+
+    .mode-buttons {
+
+      display: grid;
+
+      grid-template-columns:
+        1fr
+        1fr;
+
+      gap: 10px;
+
+      margin-bottom: 25px;
+    }
+
+
+    .mode-btn {
+
+      border: none;
+
+      padding: 15px;
+
+      border-radius: 13px;
+
+      background:
+        rgba(
+          255,
+          255,
+          255,
+          .07
+        );
+
+      color: white;
+
+      font-size: 15px;
+
+      font-weight: 800;
+
+      cursor: pointer;
+
+      transition: .2s;
+    }
+
+
+    .mode-btn:hover {
+
+      background:
+        rgba(
+          0,
+          212,
+          255,
+          .15
+        );
+    }
+
+
+    .mode-btn.active {
+
+      background:
+        #00d4ff;
+
+      color:
+        #07111f;
+    }
+
+
+    /* =====================================
+       INPUT GRID
+    ===================================== */
+
+    .input-grid {
+
+      display: grid;
+
+      grid-template-columns:
+        1fr
+        1fr;
+
+      gap: 16px;
+    }
+
+
+    .field {
+
+      margin-bottom: 5px;
+    }
+
+
+    label {
+
+      display: block;
+
+      margin-bottom: 8px;
+
+      font-size: 14px;
+
+      font-weight: 700;
+    }
+
+
+    input,
+    select {
+
+      width: 100%;
+
+      padding: 15px;
+
+      border:
+        1px solid
+        rgba(
+          255,
+          255,
+          255,
+          .1
+        );
+
+      border-radius: 12px;
+
+      outline: none;
+
+      background:
+        rgba(
+          255,
+          255,
+          255,
+          .07
+        );
+
+      color: white;
+
+      font-size: 16px;
+    }
+
+
+    input:focus,
+    select:focus {
+
+      border-color:
+        #00d4ff;
+    }
+
+
+    select {
+
+      cursor: pointer;
+    }
+
+
+    select option {
+
+      background:
+        #1a1530;
+
+      color: white;
+    }
+
+
+    /* =====================================
+       TRANSACTION TYPE
+    ===================================== */
+
+    .transaction-section {
+
+      margin-top: 22px;
+    }
+
+
+    .transaction-buttons {
+
+      display: grid;
+
+      grid-template-columns:
+        1fr
+        1fr;
+
+      gap: 10px;
+    }
+
+
+    .transaction-btn {
+
+      padding: 13px;
+
+      border: none;
+
+      border-radius: 12px;
+
+      background:
+        rgba(
+          255,
+          255,
+          255,
+          .07
+        );
+
+      color: white;
+
+      font-weight: 700;
+
+      cursor: pointer;
+    }
+
+
+    .transaction-btn.active {
+
+      background:
+        rgba(
+          0,
+          255,
+          153,
+          .18
+        );
+
+      border:
+        1px solid
+        rgba(
+          0,
+          255,
+          153,
+          .4
+        );
+
+      color:
+        #00ff99;
+    }
+
+
+    /* =====================================
+       RESULT
+    ===================================== */
+
+    .result-card {
+
+      margin-top: 28px;
+
+      padding: 24px;
+
+      border-radius: 18px;
+
+      background:
+        rgba(
+          0,
+          212,
+          255,
+          .07
+        );
+
+      border:
+        1px solid
+        rgba(
+          0,
+          212,
+          255,
+          .18
+        );
+    }
+
+
+    .result-card h2 {
+
+      color:
+        #00d4ff;
+
+      font-size: 19px;
+
+      margin-bottom: 18px;
+    }
+
+
+    .result-row {
+
+      display: flex;
+
+      justify-content:
+        space-between;
+
+      align-items:
+        center;
+
+      gap: 20px;
+
+      padding: 12px 0;
+
+      border-bottom:
+        1px solid
+        rgba(
+          255,
+          255,
+          255,
+          .08
+        );
+    }
+
+
+    .result-row span {
+
+      opacity: .8;
+    }
+
+
+    .result-row strong {
+
+      font-size: 16px;
+    }
+
+
+    .total-row {
+
+      border-bottom: none;
+
+      padding-top: 18px;
+    }
+
+
+    .total-row span,
+    .total-row strong {
+
+      font-size: 23px;
+
+      font-weight: 900;
+    }
+
+
+    .total-row strong {
+
+      color:
+        #00ff99;
+    }
+
+
+    /* =====================================
+       GST BREAKDOWN
+    ===================================== */
+
+    .breakdown-title {
+
+      margin-top: 22px;
+
+      margin-bottom: 10px;
+
+      color:
+        #00d4ff;
+
+      font-size: 15px;
+
+      font-weight: 800;
+    }
+
+
+    /* =====================================
+       ACTION BUTTONS
+    ===================================== */
+
+    .action-buttons {
+
+      display: grid;
+
+      grid-template-columns:
+        1fr
+        1fr;
+
+      gap: 10px;
+
+      margin-top: 18px;
+    }
+
+
+    .action-btn {
+
+      padding: 13px;
+
+      border: none;
+
+      border-radius: 12px;
+
+      color: white;
+
+      background:
+        rgba(
+          255,
+          255,
+          255,
+          .1
+        );
+
+      font-weight: 800;
+
+      cursor: pointer;
+    }
+
+
+    .action-btn:hover {
+
+      background:
+        rgba(
+          255,
+          255,
+          255,
+          .16
+        );
+    }
+
+
+    /* =====================================
+       CTA
+    ===================================== */
+
+    .growble-cta {
+
+      margin-top: 24px;
+
+      padding: 22px;
+
+      border-radius: 18px;
+
+      background:
+        linear-gradient(
+          90deg,
+          rgba(
+            0,
+            212,
+            255,
+            .12
+          ),
+          rgba(
+            0,
+            255,
+            153,
+            .1
+          )
+        );
+
+      border:
+        1px solid
+        rgba(
+          0,
+          212,
+          255,
+          .18
+        );
+    }
+
+
+    .growble-cta h3 {
+
+      margin-bottom: 7px;
+
+      font-size: 18px;
+    }
+
+
+    .growble-cta p {
+
+      opacity: .75;
+
+      line-height: 1.5;
+
+      margin-bottom: 14px;
+    }
+
+
+    .growble-cta a {
+
+      display: inline-block;
+
+      text-decoration: none;
+
+      padding: 12px 20px;
+
+      border-radius: 12px;
+
+      background:
+        linear-gradient(
+          90deg,
+          #00d4ff,
+          #00ff99
+        );
+
+      color:
+        #07111f;
+
+      font-weight: 900;
+    }
+
+
+    /* =====================================
+       INFORMATION
+    ===================================== */
+
+    .information {
+
+      margin-top: 35px;
+
+      line-height: 1.7;
+
+      opacity: .85;
+    }
+
+
+    .information h2 {
+
+      color:
+        #00d4ff;
+
+      margin:
+        25px
+        0
+        8px;
+
+      font-size: 21px;
+    }
+
+
+    .information h3 {
+
+      margin:
+        18px
+        0
+        6px;
+
+      font-size: 17px;
+    }
+
+
+    .formula {
+
+      margin-top: 10px;
+
+      padding: 15px;
+
+      border-radius: 12px;
+
+      background:
+        rgba(
+          255,
+          255,
+          255,
+          .05
+        );
+
+      font-family:
+        monospace;
+
+      overflow-x: auto;
+    }
+
+
+    /* =====================================
+       FOOTER
+    ===================================== */
+
+    footer {
+
+      text-align: center;
+
+      padding:
+        30px
+        10px;
+
+      opacity: .55;
+
+      font-size: 13px;
+    }
+
+
+    /* =====================================
+       RESPONSIVE
+    ===================================== */
+
+    @media(max-width:650px) {
+
+      body {
+
+        padding: 12px;
+      }
+
+
+      .calculator-card {
+
+        padding: 20px;
+
+        border-radius: 18px;
+      }
+
+
+      .input-grid {
+
+        grid-template-columns:
+          1fr;
+      }
+
+
+      .mode-buttons {
+
+        grid-template-columns:
+          1fr;
+      }
+
+
+      .transaction-buttons {
+
+        grid-template-columns:
+          1fr;
+      }
+
+
+      .action-buttons {
+
+        grid-template-columns:
+          1fr;
+      }
+
+
+      .calculator-title h1 {
+
+        font-size: 23px;
+      }
+
+
+      .result-row {
+
+        align-items:
+          flex-start;
+      }
+
+
+      .total-row span,
+      .total-row strong {
+
+        font-size: 18px;
+      }
+    }
+
+  </style>
+</head>
+
+
+<body>
+
+<div class="container">
+
+  <!-- HEADER -->
+
+  <header>
+
+    <div class="logo">
+      Growble
+    </div>
+
+    <div class="tagline">
+      Simple tools for small businesses
+    </div>
+
+  </header>
+
+
+  <!-- CALCULATOR -->
+
+  <main class="calculator-card">
+
+    <div class="calculator-title">
+
+      <h1>
+        GST Calculator
+      </h1>
+
+      <p>
+        Calculate GST, CGST, SGST and IGST instantly.
+      </p>
+
+    </div>
+
+
+    <!-- ADD / REMOVE -->
+
+    <div class="mode-buttons">
+
+      <button
+        id="addTab"
+        class="mode-btn active"
+        type="button"
+      >
+        Add GST
+      </button>
+
+      <button
+        id="removeTab"
+        class="mode-btn"
+        type="button"
+      >
+        Remove GST
+      </button>
+
+    </div>
+
+
+    <!-- INPUTS -->
+
+    <div class="input-grid">
+
+      <div class="field">
+
+        <label for="amount">
+          Amount (₹)
+        </label>
+
+        <input
+          id="amount"
+          type="number"
+          min="0"
+          step="0.01"
+          placeholder="Enter amount"
+          inputmode="decimal"
+        >
+
+      </div>
+
+
+      <div class="field">
+
+        <label for="rate">
+          GST Rate
+        </label>
+
+        <select id="rate">
+
+          <option value="0">
+            0%
+          </option>
+
+          <option value="5">
+            5%
+          </option>
+
+          <option value="12">
+            12%
+          </option>
+
+          <option value="18" selected>
+            18%
+          </option>
+
+          <option value="28">
+            28%
+          </option>
+
+        </select>
+
+      </div>
+
+    </div>
+
+
+    <!-- TRANSACTION TYPE -->
+
+    <div class="transaction-section">
+
+      <label>
+        Transaction Type
+      </label>
+
+      <div class="transaction-buttons">
+
+        <button
+          id="intraBtn"
+          class="transaction-btn active"
+          type="button"
+        >
+          Intra-State
+        </button>
+
+        <button
+          id="interBtn"
+          class="transaction-btn"
+          type="button"
+        >
+          Inter-State
+        </button>
+
+      </div>
+
+    </div>
+
+
+    <!-- RESULT -->
+
+    <div class="result-card">
+
+      <h2 id="resultTitle">
+        GST Calculation
+      </h2>
+
+
+      <div class="result-row">
+
+        <span>
+          Taxable Amount
+        </span>
+
+        <strong id="taxable">
+          ₹0.00
+        </strong>
+
+      </div>
+
+
+      <div class="result-row">
+
+        <span>
+          GST Rate
+        </span>
+
+        <strong id="rateResult">
+          18%
+        </strong>
+
+      </div>
+
+
+      <div class="result-row">
+
+        <span>
+          GST Amount
+        </span>
+
+        <strong id="gst">
+          ₹0.00
+        </strong>
+
+      </div>
+
+
+      <!-- INTRA STATE -->
+
+      <div id="intraBreakdown">
+
+        <div class="breakdown-title">
+          GST Breakdown
+        </div>
+
+
+        <div class="result-row">
+
+          <span>
+            CGST
+          </span>
+
+          <strong id="cgst">
+            ₹0.00
+          </strong>
+
+        </div>
+
+
+        <div class="result-row">
+
+          <span>
+            SGST
+          </span>
+
+          <strong id="sgst">
+            ₹0.00
+          </strong>
+
+        </div>
+
+      </div>
+
+
+      <!-- INTER STATE -->
+
+      <div
+        id="interBreakdown"
+        style="display:none;"
+      >
+
+        <div class="breakdown-title">
+          GST Breakdown
+        </div>
+
+
+        <div class="result-row">
+
+          <span>
+            IGST
+          </span>
+
+          <strong id="igst">
+            ₹0.00
+          </strong>
+
+        </div>
+
+      </div>
+
+
+      <!-- TOTAL -->
+
+      <div class="result-row total-row">
+
+        <span>
+          Total Amount
+        </span>
+
+        <strong id="total">
+          ₹0.00
+        </strong>
+
+      </div>
+
+
+      <!-- ACTIONS -->
+
+      <div class="action-buttons">
+
+        <button
+          id="copyBtn"
+          class="action-btn"
+          type="button"
+        >
+          Copy Result
+        </button>
+
+        <button
+          id="clearBtn"
+          class="action-btn"
+          type="button"
+        >
+          Clear
+        </button>
+
+      </div>
+
+    </div>
+
+
+    <!-- GROWBLE CTA -->
+
+    <div class="growble-cta">
+
+      <h3>
+        Done calculating? Grow your business with Growble.
+      </h3>
+
+      <p>
+        Automate customer follow-ups and save time
+        managing your business.
+      </p>
+
+      <a href="/landing.html">
+        Try Growble →
+      </a>
+
+    </div>
+
+  </main>
+
+
+  <!-- SEO CONTENT -->
+
+  <section class="information">
+
+    <h2>
+      GST Calculator India
+    </h2>
+
+    <p>
+      Growble's free GST Calculator helps you
+      calculate GST quickly for your business,
+      products and services. You can add GST to
+      an amount or remove GST from a GST-inclusive
+      price.
+    </p>
+
+
+    <h2>
+      How to Use the GST Calculator
+    </h2>
+
+    <h3>
+      1. Add GST
+    </h3>
+
+    <p>
+      Enter the original amount, select the GST
+      rate and the calculator will show the taxable
+      amount, GST amount and final amount.
+    </p>
+
+    <div class="formula">
+      GST = Amount × GST Rate ÷ 100
+    </div>
+
+
+    <h3>
+      2. Remove GST
+    </h3>
+
+    <p>
+      If your amount already includes GST, select
+      "Remove GST". The calculator will determine
+      the taxable value and GST component.
+    </p>
+
+    <div class="formula">
+      Taxable Amount = Inclusive Amount ÷ (1 + GST Rate ÷ 100)
+    </div>
+
+
+    <h2>
+      CGST, SGST and IGST
+    </h2>
+
+    <p>
+      For an intra-state transaction, the GST
+      amount is divided equally between CGST and
+      SGST. For an inter-state transaction, the
+      GST amount is represented as IGST.
+    </p>
+
+
+    <h2>
+      Common GST Rates
+    </h2>
+
+    <p>
+      This calculator includes 0%, 5%, 12%, 18%
+      and 28% GST rates for quick calculations.
+    </p>
+
+
+    <h2>
+      Example: 18% GST Calculation
+    </h2>
+
+    <p>
+      If the taxable amount is ₹10,000 and GST is
+      18%, the GST amount is ₹1,800 and the total
+      amount is ₹11,800.
+    </p>
+
+
+    <h2>
+      Growble for Small Businesses
+    </h2>
+
+    <p>
+      Calculating GST is only one part of running
+      a business. Growble helps businesses manage
+      customer communication and automate follow-ups
+      so important customers don't get forgotten.
+    </p>
+
+  </section>
+
+
+  <footer>
+    © Growble — Business tools for growing businesses
+  </footer>
+
+</div>
+
+
+<script src="/tools/gst-calculator.js"></script>
+
+</body>
+</html>
