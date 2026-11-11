@@ -1,6 +1,9 @@
 const express = require("express");
 const router = express.Router();
 const Lead = require("../models/Lead");
+const User = require("../models/User");
+const PLAN_LIMITS = require("../config/PlanLimits");
+const sendWhatsAppMessage = require("../utils/whatsappSender");
 
 router.get("/", (req, res) => {
   const VERIFY_TOKEN =
@@ -25,17 +28,17 @@ router.post("/", async (req, res) => {
     if (message) {
       const from = message.from;
       const text = message.text?.body;
-const lowerText = text.toLowerCase();
+      if (!text) {
+        return res.sendStatus(200);
+      }
+
+      const lowerText = text.toLowerCase();
 
       console.log("Incoming:", text);
 
       // ✅ STOP FOLLOW-UP
       const lead = await Lead.findOne({ phone: from });
-const User = require("../models/User");
-
-const user = lead
- ? await User.findById(lead.user)
- : null;
+      const user = lead ? await User.findById(lead.user) : null;
 
 if (lead && text) {
   lead.conversation.push({
@@ -68,28 +71,19 @@ if (
 
       // ✅ AI REPLY
       const generateMessage = require("../utils/aiMessage");
-      const sendWhatsAppMessage = require("../utils/whatsappSender");
 
       let reply;
 
-if(
-user &&
-user.plan==="pro"
-){
-
-reply =
-await generateMessage({
-  message: text,
-  user,
-  lead
-});
-
-}else{
-
-reply=
-"Thanks for contacting us 😊 Our team will respond shortly.";
-
-}
+      const aiReplyLimit = PLAN_LIMITS[user?.plan]?.aiReplies || 0;
+      if (user && aiReplyLimit > 0) {
+        reply = await generateMessage({
+          message: text,
+          user,
+          lead
+        });
+      } else {
+        reply = "Thanks for contacting us 😊 Our team will respond shortly.";
+      }
 
 const lowerConversation =
 JSON.stringify(
@@ -132,17 +126,18 @@ if (
   await lead.save();
 }
 
-await sendWhatsAppMessage({
-
-phone: from,
-
-message: reply,
-
-accessToken: user.whatsapp.accessToken,
-
-phoneNumberId: user.whatsapp.phoneNumberId
-
-});
+      if (
+        user?.whatsapp?.connected &&
+        user.whatsapp.accessToken &&
+        user.whatsapp.phoneNumberId
+      ) {
+        await sendWhatsAppMessage({
+          phone: from,
+          message: reply,
+          accessToken: user.whatsapp.accessToken,
+          phoneNumberId: user.whatsapp.phoneNumberId
+        });
+      }
     }
 
     res.sendStatus(200);

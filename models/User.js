@@ -36,6 +36,11 @@ planExpiresAt: {
   type: Date
 },
 
+freeTrialUsed: {
+  type: Boolean,
+  default: true
+},
+
 // 🔒 Prevent duplicate Razorpay webhook processing
 lastPaymentId: {
   type: String

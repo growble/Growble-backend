@@ -2,50 +2,37 @@ const express = require("express");
 const router = express.Router();
 const auth = require("../middleware/authMiddleware");
 const User = require("../models/User");
+const { resetMonthlyUsage } = require("../utils/planUsage");
 
 router.get("/me", auth, async (req, res) => {
   try {
     const user = req.user;
 
-    const PLAN_LIMITS =
-require("../config/PlanLimits");
+    const PLAN_LIMITS = require("../config/PlanLimits");
+    const limits = PLAN_LIMITS[user.plan] || PLAN_LIMITS.free;
+    const usageReset = resetMonthlyUsage(user);
 
-const limits =
-PLAN_LIMITS[user.plan] ||
-PLAN_LIMITS.free;
+    if (usageReset) {
+      await user.save();
+    }
 
-res.json({
-  success: true,
+    const usage = user.automationUsage.usage;
 
-  user,
-
-  planExpired:
-    req.planExpired || false,
-
-  planExpiringSoon:
-    req.planExpiringSoon || null,
-
-  usage: {
-
-    aiRepliesUsed:
-      user.usage?.aiReplies || 0,
-
-    aiRepliesLimit:
-      limits.aiReplies,
-
-    followUpsUsed:
-      user.usage?.followUps || 0,
-
-    followUpsLimit:
-      limits.followUps,
-
-    aiQualificationUsed:
-      user.usage?.aiQualification || 0,
-
-    aiQualificationLimit:
-      limits.aiQualification
-  }
-});
+    res.json({
+      success: true,
+      user,
+      planExpired: req.planExpired || false,
+      planExpiringSoon: req.planExpiringSoon || null,
+      usage: {
+        aiRepliesUsed: usage.aiReplies,
+        aiRepliesLimit: limits.aiReplies,
+        followUpsUsed: usage.followUps,
+        followUpsLimit: limits.followUps,
+        aiQualificationUsed: usage.aiQualification,
+        aiQualificationLimit: limits.aiQualification,
+        resetAt: usage.resetAt
+      }
+    });
 
   } catch (err) {
   console.error("/api/user/me error:", err);

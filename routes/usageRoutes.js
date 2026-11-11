@@ -1,15 +1,9 @@
 const express = require("express");
-const User = require("../models/User");
 const authMiddleware = require("../middleware/authMiddleware");
+const PLAN_LIMITS = require("../config/PlanLimits");
+const { resetMonthlyUsage } = require("../utils/planUsage");
 
 const router = express.Router();
-
-// Plan limits (same as scheduler)
-const PLAN_LIMITS = {
-  free: 0,
-  starter: 50,
-  pro: Infinity
-};
 
 /**
  * @route   GET /api/usage
@@ -18,23 +12,23 @@ const PLAN_LIMITS = {
  */
 router.get("/", authMiddleware, async (req, res) => {
   try {
-    const user = await User.findById(req.userId);
+    const user = req.user;
+    const usageReset = resetMonthlyUsage(user);
 
-    if (!user) {
-      return res.status(404).json({
-        message: "User not found"
-      });
+    if (usageReset) {
+      await user.save();
     }
 
-    const limit = PLAN_LIMITS[user.plan];
-    const used = user.automationUsage?.count || 0;
+    const limits = PLAN_LIMITS[user.plan] || PLAN_LIMITS.free;
+    const limit = limits.followUps;
+    const used = user.automationUsage.usage.followUps;
 
     res.status(200).json({
       plan: user.plan,
       used,
       limit,
-      remaining: limit === Infinity ? Infinity : Math.max(limit - used, 0),
-      resetAt: user.automationUsage?.resetAt
+      remaining: Math.max(limit - used, 0),
+      resetAt: user.automationUsage.usage.resetAt
     });
   } catch (error) {
     console.error("Usage stats error:", error);

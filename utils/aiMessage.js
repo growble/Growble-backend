@@ -1,4 +1,9 @@
 const OpenAI = require("openai");
+const {
+  hasRemainingUsage,
+  recordPlanUsage,
+  resetMonthlyUsage
+} = require("./planUsage");
 
 const openai = new OpenAI({
 apiKey: process.env.OPENAI_API_KEY
@@ -10,30 +15,16 @@ user,
 lead
 }) => {
 
-const PLAN_LIMITS =
-require("../config/PlanLimits");
-
 const dbUser = user;
 
-console.log("===== AI DEBUG =====");
+const usageReset = resetMonthlyUsage(dbUser);
 
-const limit =
-PLAN_LIMITS[dbUser.plan]?.aiReplies || 0;
-
-if (!dbUser.automationUsage) {
-  dbUser.automationUsage = {};
-}
-
-if (!dbUser.automationUsage.usage) {
-  dbUser.automationUsage.usage = {
-    aiReplies: 0,
-    aiQualification: 0,
-    followUps: 0
-  };
+if (usageReset) {
+  await dbUser.save();
 }
 
 if (
-  (dbUser.automationUsage.usage.aiReplies || 0) >= limit
+  !hasRemainingUsage(dbUser, "aiReplies")
 ) {
   const error = new Error("AI reply limit reached. Upgrade your plan.");
   error.code = "AI_REPLY_LIMIT_REACHED";
@@ -46,6 +37,7 @@ if(
 lower.includes("not interested")
 ){
 
+await recordPlanUsage(dbUser, "aiReplies");
 return "No worries 👍 Just curious — how are you currently handling this?";
 
 }
@@ -335,10 +327,7 @@ max_tokens:120
 
 });
 
-dbUser.automationUsage.usage.aiReplies =
-(dbUser.automationUsage.usage.aiReplies || 0) + 1;
-
-await dbUser.save();
+await recordPlanUsage(dbUser, "aiReplies");
 
   if (lead) {
 

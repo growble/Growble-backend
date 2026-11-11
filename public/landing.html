@@ -2,16 +2,27 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Growble CRM</title>
+<title>Growble | Lead Management for Growing Businesses</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Organize business leads, stay on top of follow-ups, and keep every sales conversation moving with Growble.">
+<link rel="canonical" href="https://growble.app/">
+<meta name="robots" content="index, follow">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Growble | Lead Management for Growing Businesses">
+<meta property="og:description" content="Organize business leads, stay on top of follow-ups, and keep every sales conversation moving with Growble.">
+<meta property="og:url" content="https://growble.app/">
+<meta name="twitter:card" content="summary">
 
 <style>
 
 body{
 margin:0;
-font-family:Arial;
-background:#0b1220;
+font-family:Arial,Helvetica,sans-serif;
+background:
+radial-gradient(ellipse at 75% 8%,rgba(0,122,160,.16),transparent 35%),
+linear-gradient(145deg,#0b1220,#0a1424 55%,#0b1220);
 color:white;
+line-height:1.5;
 }
 
 .container{
@@ -140,38 +151,17 @@ border-radius:12px;
 box-shadow:0 20px 50px rgba(0,0,0,0.6);
 }
 
-/* TESTIMONIALS */
-
-.testimonials{
-padding:80px 20px;
-display:flex;
-gap:30px;
-justify-content:center;
-flex-wrap:wrap;
-}
-
-.testimonial{
-background:#111a2e;
-padding:30px;
-width:280px;
-border-radius:10px;
-}
-
 /* PRICING */
 
 .pricing{
 padding:80px 20px;
-display:flex;
-justify-content:center;
-gap:40px;
-flex-wrap:wrap;
+display:block;
 }
 
 .plan{
 background:#111a2e;
 padding:40px;
 border-radius:10px;
-width:280px;
 text-align:center;
 }
 
@@ -208,6 +198,7 @@ text-align:center;
 padding:40px;
 opacity:0.6;
 }
+
 /* =========================
    MOBILE (max-width: 768px)
 ========================= */
@@ -257,26 +248,9 @@ width:100%;
 max-width:320px;
 }
 
-/* TESTIMONIALS */
-.testimonials{
-flex-direction:column;
-align-items:center;
-}
-
-.testimonial{
-width:100%;
-max-width:320px;
-}
-
 /* PRICING */
-.pricing{
-flex-direction:column;
-align-items:center;
-}
-
 .plan{
 width:100%;
-max-width:320px;
 }
 
 /* SCREENSHOT */
@@ -295,7 +269,6 @@ margin-left:0;
 }
 
 }
-
 
 /* =========================
    SMALL MOBILE (max-width: 480px)
@@ -318,13 +291,613 @@ height:42px;
 
 }
 
+.landing-page{
+--surface:#111a2e;
+--muted:#a8b4c7;
+--accent:#00d4ff;
+}
+
+.nav{
+padding:18px 20px;
+}
+
+.nav-links{
+display:flex;
+align-items:center;
+gap:24px;
+}
+
+.nav-links a{
+margin:0;
+color:#c8d3e2;
+font-size:14px;
+transition:color .2s ease;
+}
+
+.nav-links a:hover{
+color:var(--accent);
+}
+
+.btn{
+display:inline-flex;
+align-items:center;
+justify-content:center;
+min-height:44px;
+padding:11px 20px;
+border:1px solid transparent;
+border-radius:10px;
+transition:transform .2s ease, box-shadow .2s ease, background .2s ease;
+}
+
+.btn:hover{
+transform:translateY(-2px);
+box-shadow:0 10px 24px rgba(0,212,255,.2);
+}
+
+.btn-secondary{
+border-color:rgba(255,255,255,.16);
+background:rgba(255,255,255,.04);
+color:white;
+}
+
+.hero{
+display:grid;
+grid-template-columns:1.05fr .95fr;
+align-items:center;
+gap:55px;
+padding:88px 24px 96px;
+text-align:left;
+}
+
+.hero-copy{
+max-width:620px;
+}
+
+.eyebrow{
+display:inline-flex;
+align-items:center;
+gap:8px;
+padding:8px 12px;
+border:1px solid rgba(0,212,255,.22);
+border-radius:999px;
+background:rgba(0,212,255,.08);
+color:#82eaff;
+font-size:13px;
+font-weight:700;
+}
+
+.hero h1{
+margin:22px 0 18px;
+font-size:clamp(42px,5.2vw,68px);
+line-height:1.04;
+letter-spacing:-2.5px;
+}
+
+@media (max-width:768px){
+.hero h1{
+font-size:clamp(34px,9vw,46px);
+letter-spacing:-1.5px;
+}
+}
+
+.hero h1 span{
+color:var(--accent);
+}
+
+.hero p{
+max-width:560px;
+margin-bottom:28px;
+color:var(--muted);
+font-size:18px;
+line-height:1.7;
+}
+
+.hero-actions{
+display:flex;
+flex-wrap:wrap;
+gap:12px;
+}
+
+.hero-note{
+margin-top:16px;
+color:#8997ac;
+font-size:13px;
+}
+
+.product-preview{
+position:relative;
+padding:22px;
+border:1px solid rgba(255,255,255,.12);
+border-radius:22px;
+background:linear-gradient(145deg,rgba(24,39,65,.96),rgba(14,24,42,.96));
+box-shadow:0 30px 90px rgba(0,0,0,.4),0 0 70px rgba(0,212,255,.08);
+}
+
+.preview-top{
+display:flex;
+justify-content:space-between;
+align-items:center;
+gap:12px;
+margin-bottom:20px;
+}
+
+.preview-title{
+font-size:15px;
+font-weight:800;
+}
+
+.preview-status{
+color:#a8b4c7;
+font-size:12px;
+}
+
+.preview-stats{
+display:grid;
+grid-template-columns:repeat(3,1fr);
+gap:10px;
+margin-bottom:18px;
+}
+
+.preview-stat{
+padding:12px;
+border:1px solid rgba(255,255,255,.07);
+border-radius:12px;
+background:rgba(255,255,255,.035);
+}
+
+.preview-stat b{
+display:block;
+margin-bottom:5px;
+font-size:20px;
+}
+
+.preview-stat span{
+color:var(--muted);
+font-size:11px;
+}
+
+.lead-list{
+display:grid;
+gap:9px;
+}
+
+.lead-row{
+display:grid;
+grid-template-columns:36px 1fr auto;
+align-items:center;
+gap:10px;
+padding:11px;
+border:1px solid rgba(255,255,255,.06);
+border-radius:12px;
+background:rgba(255,255,255,.025);
+}
+
+.lead-avatar{
+display:grid;
+width:34px;
+height:34px;
+place-items:center;
+border-radius:10px;
+background:rgba(0,212,255,.13);
+color:#82eaff;
+font-size:12px;
+font-weight:800;
+}
+
+.lead-info b,.lead-info span{
+display:block;
+}
+
+.lead-info b{
+font-size:12px;
+}
+
+.lead-info span{
+margin-top:4px;
+color:var(--muted);
+font-size:11px;
+}
+
+.lead-tag{
+padding:5px 8px;
+border-radius:999px;
+background:rgba(0,212,255,.1);
+color:#82eaff;
+font-size:10px;
+font-weight:700;
+}
+
+.lead-tag.warm{
+background:rgba(255,184,0,.12);
+color:#ffd36b;
+}
+
+.lead-tag.done{
+background:rgba(65,210,145,.12);
+color:#7ee7be;
+}
+
+.section-heading{
+max-width:700px;
+margin:0 auto 34px;
+text-align:center;
+}
+
+.section-heading .eyebrow{
+margin-bottom:14px;
+}
+
+.section-heading h2{
+margin:0 0 12px;
+font-size:clamp(28px,3vw,42px);
+letter-spacing:-1px;
+}
+
+.section-heading p{
+margin:0;
+color:var(--muted);
+font-size:16px;
+line-height:1.65;
+}
+
+.problem{
+border:1px solid rgba(255,255,255,.07);
+border-radius:22px;
+background:linear-gradient(120deg,rgba(17,26,46,.95),rgba(15,35,53,.88));
+}
+
+.problem ul{
+display:grid;
+grid-template-columns:repeat(3,1fr);
+gap:14px;
+max-width:900px;
+margin:28px auto;
+}
+
+.problem li{
+margin:0;
+padding:16px;
+border:1px solid rgba(255,255,255,.07);
+border-radius:12px;
+background:rgba(255,255,255,.035);
+color:#d7e2ef;
+font-size:14px;
+}
+
+.problem h3{
+color:var(--accent);
+}
+
+.features{
+display:grid;
+grid-template-columns:repeat(4,minmax(0,1fr));
+gap:16px;
+padding:78px 12px;
+}
+
+.feature{
+width:auto;
+border:1px solid rgba(255,255,255,.07);
+border-radius:16px;
+background:linear-gradient(160deg,#141f35,#10192b);
+}
+
+.feature-icon{
+display:grid;
+width:42px;
+height:42px;
+place-items:center;
+border-radius:12px;
+background:rgba(0,212,255,.1);
+font-size:20px;
+}
+
+.feature h3{
+margin:18px 0 9px;
+font-size:17px;
+}
+
+.feature p{
+margin:0;
+color:var(--muted);
+font-size:14px;
+line-height:1.6;
+}
+
+.screenshot{
+padding:40px 20px 85px;
+}
+
+.screenshot img{
+border:1px solid rgba(255,255,255,.12);
+}
+
+.audience{
+padding:74px 20px;
+border-top:1px solid rgba(255,255,255,.06);
+border-bottom:1px solid rgba(255,255,255,.06);
+background:rgba(255,255,255,.018);
+}
+
+.audience-tags{
+display:flex;
+flex-wrap:wrap;
+justify-content:center;
+gap:12px;
+max-width:900px;
+margin:0 auto;
+}
+
+.audience-tags span{
+padding:11px 16px;
+border:1px solid rgba(255,255,255,.1);
+border-radius:999px;
+background:rgba(255,255,255,.04);
+color:#d9e3f0;
+font-size:14px;
+}
+
+.free-tools{
+padding:78px 12px 20px;
+}
+
+.tool-grid{
+display:grid;
+grid-template-columns:repeat(3,minmax(0,1fr));
+gap:18px;
+}
+
+.tool-card{
+display:flex;
+flex-direction:column;
+align-items:flex-start;
+min-height:210px;
+padding:25px;
+border:1px solid rgba(255,255,255,.09);
+border-radius:18px;
+background:linear-gradient(155deg,#141f35,#10192b);
+}
+
+.tool-card-icon{
+display:grid;
+width:44px;
+height:44px;
+place-items:center;
+border-radius:13px;
+background:rgba(0,212,255,.1);
+font-size:21px;
+}
+
+.tool-card h3{
+margin:17px 0 8px;
+font-size:18px;
+}
+
+.tool-card p{
+flex:1;
+margin:0 0 18px;
+color:var(--muted);
+font-size:14px;
+line-height:1.6;
+}
+
+.tool-card a{
+color:#82eaff;
+font-weight:700;
+text-decoration:none;
+}
+
+.tool-card a:hover{
+text-decoration:underline;
+}
+
+.pricing{
+padding:82px 8px;
+}
+
+.pricing-grid{
+display:grid;
+grid-template-columns:repeat(4,minmax(0,1fr));
+gap:16px;
+}
+
+.plan{
+border:1px solid rgba(255,255,255,.09);
+box-shadow:0 18px 45px rgba(0,0,0,.17);
+}
+
+.plan h2{
+margin:0;
+font-size:22px;
+}
+
+.plan .price{
+font-size:34px;
+font-weight:800;
+}
+
+.plan p{
+color:#c7d2e0;
+font-size:14px;
+line-height:1.5;
+}
+
+.plan .btn{
+margin-top:12px;
+}
+
+.faq{
+padding-top:55px;
+}
+
+.faq h2{
+margin-bottom:30px;
+font-size:clamp(28px,3vw,38px);
+}
+
+.faq-item{
+padding:18px 20px;
+border:1px solid rgba(255,255,255,.08);
+border-radius:14px;
+background:rgba(255,255,255,.035);
+}
+
+.faq-item b{
+font-size:16px;
+}
+
+.faq-item p{
+margin:8px 0 0;
+color:var(--muted);
+line-height:1.6;
+}
+
+.cta{
+margin:20px;
+border:1px solid rgba(0,212,255,.18);
+border-radius:22px;
+background:radial-gradient(ellipse at top right,rgba(0,212,255,.13),transparent 55%),#111a2e;
+}
+
+.cta h2{
+margin:0;
+font-size:clamp(28px,3.5vw,44px);
+letter-spacing:-1px;
+}
+
+.cta p{
+max-width:580px;
+margin:14px auto 24px;
+color:var(--muted);
+line-height:1.65;
+}
+
+.footer-links{
+display:flex;
+flex-wrap:wrap;
+justify-content:center;
+gap:18px;
+margin-bottom:18px;
+}
+
+.footer-links a{
+color:#a8b4c7;
+text-decoration:none;
+font-size:13px;
+}
+
+.footer-links a:hover{
+color:var(--accent);
+}
+
+@media (min-width:769px) and (max-width:1100px){
+.features{
+grid-template-columns:repeat(2,minmax(0,1fr));
+}
+
+.tool-grid{
+grid-template-columns:repeat(2,minmax(0,1fr));
+}
+
+.pricing-grid{
+grid-template-columns:repeat(2,minmax(0,1fr));
+}
+}
+
+@media (max-width:768px){
+.nav{
+align-items:center;
+}
+
+.nav-links{
+width:100%;
+gap:12px;
+}
+
+.nav-links a{
+margin:0;
+font-size:13px;
+}
+
+.nav-links .btn{
+margin-left:auto;
+}
+
+.hero{
+grid-template-columns:1fr;
+gap:36px;
+padding:55px 12px 68px;
+text-align:center;
+}
+
+.hero-copy{
+margin:auto;
+}
+
+.hero p{
+margin-right:auto;
+margin-left:auto;
+}
+
+.hero-actions{
+justify-content:center;
+}
+
+.product-preview{
+max-width:560px;
+width:100%;
+margin:auto;
+box-sizing:border-box;
+}
+
+.problem ul{
+grid-template-columns:1fr;
+}
+
+.features{
+grid-template-columns:1fr;
+padding:55px 12px;
+}
+
+.tool-grid{
+grid-template-columns:1fr;
+}
+
+.feature{
+max-width:none;
+}
+
+.pricing{
+padding:60px 12px;
+}
+
+.pricing-grid{
+grid-template-columns:1fr;
+}
+
+.plan{
+max-width:none;
+}
+
+.cta{
+margin:10px;
+}
+}
+
+@media (prefers-reduced-motion:reduce){
+*,*::before,*::after{
+scroll-behavior:auto!important;
+transition:none!important;
+}
+}
+
 </style>
 
 </head>
 
 <body>
 
-<div class="container">
+<div class="container landing-page">
 
 <!-- NAVBAR -->
 
@@ -338,14 +911,18 @@ height:42px;
 </div>
 
 <div class="tagline">
-Turn Inquiries into Admissions
+Less lead chasing. More growth.
 </div>
 
 </div>
 
-<div>
+<div class="nav-links">
+<a href="#features">Features</a>
+<a href="#businesses">Who it's for</a>
+<a href="#tools">Free tools</a>
+<a href="#plans">Plans</a>
 <a href="/login.html">Login</a>
-<a href="/signup.html" class="btn btn-primary">Start 14-Day Free Trial</a>
+<a href="/signup.html" class="btn btn-primary">Get started</a>
 </div>
 
 </div>
@@ -354,17 +931,45 @@ Turn Inquiries into Admissions
 
 <section class="hero">
 
-<h1>
-Turn Student Inquiries Into Admissions
-</h1>
+<div class="hero-copy">
+<span class="eyebrow">A simpler way to manage every lead</span>
+<h1>Every lead deserves a <span>follow-up.</span></h1>
+<p>Keep your leads organized, see what needs attention, and follow up with confidence. Growble helps businesses turn scattered inquiries into clear next steps.</p>
+<div class="hero-actions">
+<a href="/signup.html" class="btn btn-primary">Start managing leads</a>
+<a href="#features" class="btn btn-secondary">Explore Growble</a>
+</div>
+<div class="hero-note">Start free. Upgrade when your team needs more.</div>
+</div>
 
-<p>
-Capture student inquiries, automate follow-ups, and convert more leads into admissions using Growble CRM.
-</p>
-
-<a href="/signup.html" class="btn btn-primary">
-Start 14-Day Free Trial
-</a>
+<div class="product-preview" aria-label="Illustration of the Growble lead management dashboard">
+<div class="preview-top">
+<div class="preview-title">Your lead pipeline</div>
+<div class="preview-status">Sample view</div>
+</div>
+<div class="preview-stats">
+<div class="preview-stat"><b>24</b><span>Open leads</span></div>
+<div class="preview-stat"><b>08</b><span>Need follow-up</span></div>
+<div class="preview-stat"><b>12</b><span>Contacted</span></div>
+</div>
+<div class="lead-list">
+<div class="lead-row">
+<div class="lead-avatar">AM</div>
+<div class="lead-info"><b>Ankit Kumar</b><span>Website inquiry · Today</span></div>
+<span class="lead-tag">New</span>
+</div>
+<div class="lead-row">
+<div class="lead-avatar">JR</div>
+<div class="lead-info"><b>Suman Devi</b><span>WhatsApp · Follow up today</span></div>
+<span class="lead-tag warm">Follow-up</span>
+</div>
+<div class="lead-row">
+<div class="lead-avatar">SK</div>
+<div class="lead-info"><b>Aman Raj</b><span>Phone inquiry · Contacted</span></div>
+<span class="lead-tag done">Contacted</span>
+</div>
+</div>
+</div>
 
 </section>
 
@@ -372,45 +977,50 @@ Start 14-Day Free Trial
 
 <section class="problem">
 
-<h2>Running a coaching institute is messy</h2>
+<div class="section-heading">
+<span class="eyebrow">Sound familiar?</span>
+<h2>Good leads get lost in the busywork.</h2>
+<p>When inquiries live in chats, spreadsheets, and memory, it’s easy for the next step to slip.</p>
+</div>
 
 <ul>
 
-<li>❌ Missed student follow-ups</li>
-<li>❌ Leads lost to competitors</li>
-<li>❌ Manual WhatsApp messages</li>
-<li>❌ No tracking of admissions</li>
+<li>Important inquiries buried in messages</li>
+<li>Follow-ups delayed or forgotten</li>
+<li>No clear view of who needs attention</li>
 
 </ul>
 
-<br>
-
-<h3>Growble solves all of this.</h3>
+<h3>Growble gives every lead a place and a next step.</h3>
 
 </section>
 
 <!-- FEATURES -->
 
-<section class="features">
+<section class="features" id="features">
 
 <div class="feature">
-<h3>📋 Lead Management</h3>
-<p>Capture and organize student inquiries easily.</p>
+<div class="feature-icon">📋</div>
+<h3>Keep leads organized</h3>
+<p>Store lead details in one place and keep your pipeline easy to scan.</p>
 </div>
 
 <div class="feature">
-<h3>📅 Follow-up Reminders</h3>
-<p>Never forget a follow-up again.</p>
+<div class="feature-icon">📅</div>
+<h3>Know what’s next</h3>
+<p>Set follow-up dates and see which conversations need your attention.</p>
 </div>
 
 <div class="feature">
-<h3>📲 WhatsApp Automation</h3>
-<p>Send demo invites and reminders instantly.</p>
+<div class="feature-icon">📲</div>
+<h3>Follow up on WhatsApp</h3>
+<p>Use WhatsApp follow-up tools on plans that include them, with your connected account.</p>
 </div>
 
 <div class="feature">
-<h3>📊 Conversion Analytics</h3>
-<p>Track how many leads become admissions.</p>
+<div class="feature-icon">🤖</div>
+<h3>Get a hand from AI</h3>
+<p>Generate helpful replies and make lead conversations easier to manage.</p>
 </div>
 
 </section>
@@ -419,62 +1029,73 @@ Start 14-Day Free Trial
 
 <section class="screenshot">
 
-<h2>Simple CRM Dashboard</h2>
-
-<br>
+<div class="section-heading">
+<span class="eyebrow">Built to be easy to use</span>
+<h2>Your leads, at a glance.</h2>
+<p>A clear workspace to review lead details, update progress, and plan follow-ups.</p>
+</div>
 
 <img src="/images/dashboard.png" alt="Growble CRM Dashboard">
 
 </section>
 
-<!-- TESTIMONIALS -->
-
-<section class="testimonials">
-
-<div class="testimonial">
-
-<p>
-"Growble helped us track every inquiry and increase admissions."
-</p>
-
-<br>
-
-<b>Rahul Sharma</b>  
-Coaching Owner
-
+<section class="audience" id="businesses">
+<div class="section-heading">
+<span class="eyebrow">One workspace. Many kinds of business.</span>
+<h2>If your business works with leads, Growble is for you.</h2>
+<p>From the first inquiry to the next conversation, keep your follow-up process moving—whatever you sell or serve.</p>
 </div>
-
-<div class="testimonial">
-
-<p>
-"WhatsApp follow-ups alone improved our student conversions."
-</p>
-
-<br>
-
-<b>Priya Singh</b>  
-Institute Manager
-
+<div class="audience-tags" aria-label="Examples of businesses that can use Growble">
+<span>Professional services</span>
+<span>Home services</span>
+<span>Real estate</span>
+<span>Clinics &amp; wellness</span>
+<span>Agencies</span>
+<span>Retail &amp; local business</span>
+<span>Education &amp; training</span>
+<span>B2B teams</span>
 </div>
+</section>
 
-<div class="testimonial">
-
-<p>
-"Finally a CRM built for coaching institutes."
-</p>
-
-<br>
-
-<b>Amit Kumar</b>  
-Coaching Director
-
+<section class="free-tools" id="tools">
+<div class="section-heading">
+<span class="eyebrow">Practical tools. Free to use.</span>
+<h2>Everyday business tools from Growble.</h2>
+<p>Prepare a customer quote, create a GST invoice, or quickly check tax totals—without leaving your browser.</p>
 </div>
-
+<div class="tool-grid">
+<article class="tool-card">
+<div class="tool-card-icon" aria-hidden="true">🧾</div>
+<h3>Quotation Generator</h3>
+<p>Create a customer-ready quotation with items, pricing, discounts, GST, and payment terms.</p>
+<a href="/tools/quotation-generator.html">Create a quotation →</a>
+</article>
+<article class="tool-card">
+<div class="tool-card-icon" aria-hidden="true">📄</div>
+<h3>GST Invoice Generator</h3>
+<p>Prepare a GST invoice with business details, line items, tax breakdown, and payment information.</p>
+<a href="/tools/invoice-generator.html">Create an invoice →</a>
+</article>
+<article class="tool-card">
+<div class="tool-card-icon" aria-hidden="true">％</div>
+<h3>GST Calculator</h3>
+<p>Calculate GST on an amount or work backwards from a GST-inclusive price.</p>
+<a href="/tools/gst-calculator.html">Calculate GST →</a>
+</article>
+</div>
 </section>
 
 <!-- PRICING -->
 
-<section class="pricing">
+<section class="pricing" id="plans">
+
+<div class="section-heading">
+<span class="eyebrow">Plans that grow with your business</span>
+<h2>Start simple. Scale your follow-up.</h2>
+<p>Choose the monthly lead and AI limits that fit your business today.</p>
+</div>
+
+<div class="pricing-grid">
 
 <div class="plan">
 
@@ -483,13 +1104,32 @@ Coaching Director
 <div class="price">₹0</div>
 
 <p>Lead management</p>
-<p>Follow-up reminders</p>
-<p>Basic CRM</p>
+<p>50 follow-ups/month</p>
+<p>No AI replies or qualifications</p>
+<p>1 team member</p>
 
 <br>
 
 <a href="/signup.html" class="btn btn-primary">
-Start 14-Day Free Trial
+Start Free
+</a>
+
+</div>
+
+<div class="plan">
+
+<h2>Starter</h2>
+
+<div class="price">₹499/mo</div>
+
+<p>2,000 follow-ups/month</p>
+<p>100 AI replies/month</p>
+<p>2 team members</p>
+
+<br>
+
+<a href="/signup.html" class="btn btn-primary">
+Choose Starter
 </a>
 
 </div>
@@ -498,18 +1138,39 @@ Start 14-Day Free Trial
 
 <h2>Pro</h2>
 
-<div class="price">₹499/mo</div>
+<div class="price">₹999/mo</div>
 
-<p>WhatsApp automation</p>
-<p>Activity logs</p>
-<p>Automation follow-ups</p>
-<p>Lost lead analytics</p>
+<p>10,000 follow-ups/month</p>
+<p>2,000 AI replies/month</p>
+<p>500 AI qualifications/month</p>
+<p>10 team members</p>
 
 <br>
 
 <a href="/signup.html" class="btn btn-primary">
-Start 14-Day Free Trial
+Choose Pro
 </a>
+
+</div>
+
+<div class="plan">
+
+<h2>AI Agent</h2>
+
+<div class="price">₹1499/mo</div>
+
+<p>30,000 follow-ups/month</p>
+<p>10,000 AI replies/month</p>
+<p>5,000 AI qualifications/month</p>
+<p>Unlimited team members</p>
+
+<br>
+
+<a href="/signup.html" class="btn btn-primary">
+Choose AI Agent
+</a>
+
+</div>
 
 </div>
 
@@ -533,7 +1194,7 @@ Start 14-Day Free Trial
 
 <b>Who is Growble for?</b>
 
-<p>Coaching institutes, tutors and education businesses.</p>
+<p>Any business that collects inquiries and wants a more reliable way to organize and follow up with leads.</p>
 
 </div>
 
@@ -545,24 +1206,35 @@ Start 14-Day Free Trial
 
 </div>
 
+<div class="faq-item">
+
+<b>Does Growble have free tools for businesses?</b>
+
+<p>Yes. You can use the quotation generator, GST invoice generator, and GST calculator from the <a href="#tools">free business tools section</a>.</p>
+
+</div>
+
 </section>
 
 <!-- CTA -->
 
 <section class="cta">
 
-<h2>Start managing student leads today</h2>
+<h2>Make your next lead easier to manage.</h2>
 
-<br>
+<p>Bring your leads into one clear workspace and keep the next step moving.</p>
 
 <a href="/signup.html" class="btn btn-primary">
-Start 14-Day Free Trial
+Get started with Growble
 </a>
 
 </section>
 
 <footer class="footer">
     <div class="footer-links">
+        <a href="/tools/quotation-generator.html">Quotation Generator</a>
+        <a href="/tools/invoice-generator.html">GST Invoice Generator</a>
+        <a href="/tools/gst-calculator.html">GST Calculator</a>
         <a href="/privacy-policy.html">Privacy Policy</a>
         <a href="/terms-and-conditions.html">Terms</a>
         <a href="/refund-policy.html">Refund Policy</a>

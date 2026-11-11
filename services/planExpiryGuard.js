@@ -1,18 +1,24 @@
-const User = require("../models/User");
+module.exports = async function planExpiryGuard(user) {
+  if (!user) {
+    throw new Error("User is required for plan expiry check");
+  }
 
-module.exports = async function planExpiryGuard(userId) {
-  const user = await User.findById(userId);
-
-  // Free plan without expiry
-  if (!user.planExpiresAt) return true;
+  if (!user.planExpiresAt) return false;
 
   const now = new Date();
 
-  if (now > user.planExpiresAt) {
-    user.isActive = false;
-    await user.save();
-    return false; // expired
+  if (now < user.planExpiresAt) {
+    return false;
   }
 
-  return true; // active
+  if (user.plan !== "free") {
+    user.plan = "free";
+    user.freeTrialUsed = true;
+  }
+
+  // Plan expiry should limit features, not disable account access.
+  user.isActive = true;
+  user.planExpiresAt = null;
+  await user.save();
+  return true;
 };

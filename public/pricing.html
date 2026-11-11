@@ -142,11 +142,7 @@ color:black!important;
 
 display:grid;
 
-grid-template-columns:
-repeat(
-auto-fit,
-minmax(300px,1fr)
-);
+grid-template-columns:repeat(4,minmax(0,1fr));
 
 gap:25px;
 
@@ -511,6 +507,12 @@ margin-top:20px;
 
 @media(max-width:768px){
 
+.cards{
+
+grid-template-columns:1fr;
+
+}
+
 .hero h1{
 
 font-size:42px;
@@ -526,6 +528,16 @@ transform:none;
 .roi input{
 
 width:100%;
+
+}
+
+}
+
+@media(min-width:769px) and (max-width:1100px){
+
+.cards{
+
+grid-template-columns:repeat(2,minmax(0,1fr));
 
 }
 
@@ -564,26 +576,6 @@ Powerful Growth.
 AI powered WhatsApp follow-ups to grow your business.
 
 </p>
-
-</div>
-
-<div class="toggle">
-
-<div class="toggle-box">
-
-<button class="active">
-
-Monthly
-
-</button>
-
-<button>
-
-Yearly Save 20%
-
-</button>
-
-</div>
 
 </div>
 
@@ -851,9 +843,39 @@ Compare Features
 
 <td>AI Replies</td>
 <td>❌</td>
-<td>❌</td>
-<td>✅</td>
-<td>✅</td>
+<td>100/month</td>
+<td>2,000/month</td>
+<td>10,000/month</td>
+
+</tr>
+
+<tr>
+
+<td>Follow-ups</td>
+<td>50/month</td>
+<td>2,000/month</td>
+<td>10,000/month</td>
+<td>30,000/month</td>
+
+</tr>
+
+<tr>
+
+<td>AI Lead Qualifications</td>
+<td>0</td>
+<td>0</td>
+<td>500/month</td>
+<td>5,000/month</td>
+
+</tr>
+
+<tr>
+
+<td>Team Members</td>
+<td>1</td>
+<td>2</td>
+<td>10</td>
+<td>Unlimited</td>
 
 </tr>
 
@@ -948,166 +970,6 @@ Start Free
 </div>
 
 <script>
-
-const monthlyPrices = {
-
-starter:499,
-
-pro:999,
-
-agent:1499
-
-};
-
-const yearlyPrices = {
-
-starter:4790,
-
-pro:9590,
-
-agent:14390
-
-};
-
-const monthlyBtn =
-document
-.querySelectorAll(
-".toggle button"
-)[0];
-
-const yearlyBtn =
-document
-.querySelectorAll(
-".toggle button"
-)[1];
-
-const starterPrice =
-document
-.querySelector(
-".starter .price"
-);
-
-const proPrice =
-document
-.querySelector(
-".pro .price"
-);
-
-const agentPrice =
-document
-.querySelector(
-".agent .price"
-);
-
-function updatePricing(type){
-
-if(type==="yearly"){
-
-starterPrice.innerHTML=
-
-`₹${yearlyPrices.starter}
-
-<span>
-
-/year
-
-</span>`;
-
-proPrice.innerHTML=
-
-`₹${yearlyPrices.pro}
-
-<span>
-
-/year
-
-</span>`;
-
-agentPrice.innerHTML=
-
-`₹${yearlyPrices.agent}
-
-<span>
-
-/year
-
-</span>`;
-
-monthlyBtn
-.classList
-.remove(
-"active"
-);
-
-yearlyBtn
-.classList
-.add(
-"active"
-);
-
-}else{
-
-starterPrice.innerHTML=
-
-`₹${monthlyPrices.starter}
-
-<span>
-
-/month
-
-</span>`;
-
-proPrice.innerHTML=
-
-`₹${monthlyPrices.pro}
-
-<span>
-
-/month
-
-</span>`;
-
-agentPrice.innerHTML=
-
-`₹${monthlyPrices.agent}
-
-<span>
-
-/month
-
-</span>`;
-
-yearlyBtn
-.classList
-.remove(
-"active"
-);
-
-monthlyBtn
-.classList
-.add(
-"active"
-);
-
-}
-
-}
-
-monthlyBtn
-.addEventListener(
-"click",
-()=>updatePricing(
-"monthly"
-)
-);
-
-yearlyBtn
-.addEventListener(
-"click",
-()=>updatePricing(
-"yearly"
-)
-);
 
 function calc(){
 

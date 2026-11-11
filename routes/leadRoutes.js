@@ -9,6 +9,12 @@ const handleLeadAutomation = require("../services/automationService");
 const checkAutomationUsage = require("../middleware/automationUsageMiddleware");
 const sendWhatsAppMessage = require("../utils/whatsappSender");
 const generateMessage = require("../utils/aiMessage");
+const PLAN_LIMITS = require("../config/PlanLimits");
+const {
+  hasRemainingUsage,
+  recordPlanUsage,
+  resetMonthlyUsage
+} = require("../utils/planUsage");
 function calculateLeadAI(lead){
 
 let score = 50;
@@ -162,9 +168,10 @@ await lead.save();
 const user = await User.findById(req.user._id);
 
 // 🎁 START FREE TRIAL WHEN FIRST LEAD ADDED
-if (user.plan === "free" && !user.planExpiresAt) {
+if (user.plan === "free" && !user.planExpiresAt && !user.freeTrialUsed) {
 
   user.plan = "pro";
+  user.freeTrialUsed = true;
 
   const expiry = new Date();
   expiry.setDate(expiry.getDate() + 14);
@@ -394,6 +401,16 @@ router.post("/send-followups", auth, async (req, res) => {
       });
     }
 
+    if (resetMonthlyUsage(user)) {
+      await user.save();
+    }
+
+    if (!hasRemainingUsage(user, "followUps")) {
+      return res.status(429).json({
+        message: "Monthly follow-up limit reached. Please upgrade."
+      });
+    }
+
     const now = new Date();
 
     // Only select due leads.
@@ -426,7 +443,14 @@ router.post("/send-followups", auth, async (req, res) => {
 
     // Process a limited batch to avoid long-running HTTP requests.
     const MAX_FOLLOWUPS_PER_RUN = 25;
-    const batch = dueLeads.slice(0, MAX_FOLLOWUPS_PER_RUN);
+    const followUpsUsed = user.automationUsage.usage.followUps || 0;
+    const followUpsRemaining =
+      (PLAN_LIMITS[user.plan] || PLAN_LIMITS.free).followUps -
+      followUpsUsed;
+    const batch = dueLeads.slice(
+      0,
+      Math.min(MAX_FOLLOWUPS_PER_RUN, followUpsRemaining)
+    );
 
     let sent = 0;
     let failed = 0;
@@ -502,6 +526,7 @@ Requirements:
         });
 
         await lead.save();
+        await recordPlanUsage(user, "followUps");
 
         sent++;
 
@@ -622,6 +647,16 @@ router.post("/:id/send-whatsapp", auth, async (req, res) => {
       });
     }
 
+    if (resetMonthlyUsage(req.user)) {
+      await req.user.save();
+    }
+
+    if (!hasRemainingUsage(req.user, "followUps")) {
+      return res.status(429).json({
+        message: "Monthly follow-up limit reached. Please upgrade."
+      });
+    }
+
     const message = await generateMessage({
       message: "follow up customer",
       user: req.user,
@@ -634,6 +669,8 @@ router.post("/:id/send-whatsapp", auth, async (req, res) => {
       accessToken: req.user.whatsapp.accessToken,
       phoneNumberId: req.user.whatsapp.phoneNumberId
     });
+
+    await recordPlanUsage(req.user, "followUps");
 
     res.json({
       message: "WhatsApp message sent successfully"

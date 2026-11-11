@@ -411,35 +411,6 @@ console.log(
 "Usage:",
 usage
 );
-if (
-  (data.user.plan === "pro" ||
-   data.user.plan === "agent") &&
-  data.user.planExpiresAt
-) {
-
-  showToast({
-    title: "🎉 Free Trial Started",
-    message: "Your 14-day Growble Pro trial has started.",
-    duration: 6000
-  });
-
-}
-if (data.user.plan === "pro" && data.user.planExpiresAt) {
-
-  const expiry = new Date(data.user.planExpiresAt);
-  const now = new Date();
-
-  const diff = Math.ceil((expiry - now) / (1000 * 60 * 60 * 24));
-
-  if (diff > 0 && diff <= 14) {
-    showToast({
-      title: "🎁 Free Trial Active",
-      message: `Your Growble Pro trial expires in ${diff} day(s).`,
-      duration: 6000
-    });
-  }
-
-}
 // 🔔 PLAN MESSAGES
 if (data.planExpired) {
   showToast({
@@ -540,8 +511,8 @@ if (upgradeContainer) {
 ) {
     upgradeContainer.innerHTML = `
       <button class="btn btn-outline"
-        onclick="window.location.href='/payment.html'">
-        Upgrade to pro
+        onclick="window.location.href='/pricing.html'">
+        View plans
       </button>
     `;
   } else {
@@ -555,6 +526,10 @@ if (upgradeContainer) {
 Plan: <b style="color:#00d4ff">${escapeHtml(plan)}</b>
 
 <br>
+
+${data.user.planExpiresAt
+  ? `Expires: <b>${escapeHtml(formatDate(data.user.planExpiresAt))}</b><br>`
+  : ""}
 
 🤖 AI Replies:
 ${usage.aiRepliesUsed || 0}/${usage.aiRepliesLimit || 0}
@@ -570,53 +545,55 @@ ${usage.aiQualificationUsed || 0}/${usage.aiQualificationLimit || 0}
 ${usage.followUpsUsed || 0}/${usage.followUpsLimit || 0}
 `;
 
-    // ✅ Lock quick action if NOT pro
+    // Keep quick actions aligned with each plan's feature access.
     const quickActionsBox = document.getElementById("quickActionsBox");
 
 if (quickActionsBox) {
+  const canUseAiReplies = ["starter", "pro", "agent"].includes(plan);
+  const canSendFollowups = ["pro", "agent"].includes(plan);
+  const actions = [];
 
-  if (
-  plan === "pro" ||
-  plan === "agent"
-) {
+  if (canSendFollowups) {
+    actions.push(`
+      <button type="button" class="btn btn-primary"
+        style="width:100%;margin-top:10px"
+        onclick="event.stopPropagation(); sendTodayFollowups()">
+        📲 Send WhatsApp follow-ups
+      </button>
+      <button class="btn btn-outline"
+        style="width:100%;margin-top:10px"
+        onclick="alert('automation running soon')">
+        ⚡ Run follow-up automation
+      </button>
+      <button class="btn btn-outline"
+        style="width:100%;margin-top:10px"
+        onclick="openTemplateEditor()">
+        ✏ Edit WhatsApp Templates
+      </button>
+    `);
+  }
 
-  quickActionsBox.innerHTML = `
-    <button type="button"
-  class="btn btn-primary"
-  style="width:100%;margin-top:10px"
-  onclick="event.stopPropagation(); sendTodayFollowups()">
-  📲 Send WhatsApp follow-ups
-</button>
+  if (canUseAiReplies) {
+    actions.push(`
+      <button class="btn btn-primary"
+        style="width:100%;margin-top:10px"
+        onclick="openAIGenerator()">
+        🤖 Generate WhatsApp Message
+      </button>
+    `);
+  }
 
-    <button class="btn btn-outline"
-      style="width:100%;margin-top:10px"
-      onclick="alert('automation running soon')">
-      ⚡ Run follow-up automation
-    </button>
+  if (!canSendFollowups) {
+    actions.push(`
+      <button class="btn btn-outline"
+        style="width:100%;margin-top:10px"
+        onclick="window.location.href='/pricing.html'">
+        Unlock Pro follow-up automation
+      </button>
+    `);
+  }
 
-    <button class="btn btn-outline"
-      style="width:100%;margin-top:10px"
-      onclick="openTemplateEditor()">
-      ✏ Edit WhatsApp Templates
-    </button>
-<button class="btn btn-primary"
-  style="width:100%;margin-top:10px"
-  onclick="openAIGenerator()">
-  🤖 Generate WhatsApp Message
-</button>
-  `;
-
-} else {
-
-  quickActionsBox.innerHTML = `
-    <button class="btn btn-outline"
-      style="width:100%;margin-top:10px"
-      onclick="window.location.href='/payment.html'">
-      Unlock premium follow-up automation (pro)
-    </button>
-  `;
-
-}
+  quickActionsBox.innerHTML = actions.join("");
 
 }
   } catch (err) {

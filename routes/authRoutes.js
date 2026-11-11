@@ -36,7 +36,8 @@ router.post("/signup", async (req, res) => {
       email,
       password: hashedPassword,
       role: usersCount === 0 ? "admin" : "user",
-      plan: "free"
+      plan: "free",
+      freeTrialUsed: false
     });
 
     // New users start on free plan
@@ -80,21 +81,14 @@ router.post("/login", async (req, res) => {
       });
     }
 
-    // 🚫 Block suspended users
-    if (!user.isActive) {
+    const now = new Date();
+    const planExpired =
+      user.planExpiresAt && now >= user.planExpiresAt;
+
+    // Let expired subscribers sign in so they can continue on Free or renew.
+    if (!user.isActive && !planExpired) {
       return res.status(403).json({
         message: "Account suspended. Contact support."
-      });
-    }
-
-    // ⏰ Auto-suspend on plan expiry
-    const now = new Date();
-    if (user.planExpiresAt && now > user.planExpiresAt) {
-      user.isActive = false;
-      await user.save();
-
-      return res.status(403).json({
-        message: "Plan expired. Please upgrade."
       });
     }
 
@@ -104,6 +98,15 @@ router.post("/login", async (req, res) => {
       return res.status(400).json({
         message: "Invalid credentials"
       });
+    }
+
+    if (planExpired) {
+      if (user.plan !== "free") {
+        user.plan = "free";
+        user.freeTrialUsed = true;
+      }
+      user.isActive = true;
+      user.planExpiresAt = null;
     }
 
 // ✅ Update last login time
