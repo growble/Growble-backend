@@ -258,21 +258,44 @@ Would you like to attend the demo?`
 }
 window.sendWhatsApp = async function sendWhatsApp(id) {
 
-  const lead = leads.find(l => l._id === id);
-  if (!lead) return;
+  // Prevent accidental duplicate WhatsApp openings
+  if (window.__whatsappOpening) return;
+  window.__whatsappOpening = true;
 
-  const message = await getWhatsAppMessage(lead);
+  try {
 
-  const phone = (lead.phone || "").replace(/\D/g, "");
+    const lead = leads.find(l => l._id === id);
+    if (!lead) return;
 
-  const url =
-    "https://wa.me/" +
-    phone +
-    "?text=" +
-    encodeURIComponent(message);
+    const message = await getWhatsAppMessage(lead);
 
-  window.open(url, "_blank");
+    const phone = (lead.phone || "").replace(/\D/g, "");
 
+    if (!phone) {
+      showToast({
+        title: "⚠ Invalid Phone",
+        message: "This lead does not have a valid phone number.",
+        duration: 4000
+      });
+      return;
+    }
+
+    const url =
+      "https://wa.me/" +
+      phone +
+      "?text=" +
+      encodeURIComponent(message);
+
+    window.open(url, "_blank");
+
+  } finally {
+
+    // Allow another WhatsApp click after a short delay
+    setTimeout(() => {
+      window.__whatsappOpening = false;
+    }, 1000);
+
+  }
 };
 
 window.showToast = function ({ title = "Notification", message = "", duration = 4500 } = {}) {
@@ -302,7 +325,7 @@ window.showToast = function ({ title = "Notification", message = "", duration = 
     if (toast.parentNode) toast.remove();
   }, duration);
 }
-window.sendTodayFollowups = function () {
+window.sendTodayFollowups = async function () {
 
   const todayLeads = leads.filter(l => {
     const diff = daysDiff(l.nextFollowUpAt);
@@ -318,31 +341,55 @@ window.sendTodayFollowups = function () {
     return;
   }
 
-  let opened = 0;
+  const button = document.querySelector(
+    '#quickActionsBox button[onclick="sendTodayFollowups()"]'
+  );
 
-  todayLeads.forEach((lead, i) => {
+  if (button) {
+    button.disabled = true;
+    button.innerHTML = "📲 Sending...";
+  }
 
-    const message = getWhatsAppMessage(lead);
-    const phone = (lead.phone || "").replace(/\D/g, "");
+  try {
 
-    const url =
-      "https://wa.me/" +
-      phone +
-      "?text=" +
-      encodeURIComponent(message);
+    const res = await fetch("/api/leads/send-followups", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+        "Content-Type": "application/json"
+      }
+    });
 
-    setTimeout(() => {
-      window.open(url, "_blank");
-    }, i * 700);
+    const data = await res.json();
 
-    opened++;
-  });
+    if (!res.ok) {
+      throw new Error(data?.message || "Failed to send follow-ups");
+    }
 
-  showToast({
-    title: "WhatsApp Follow-ups",
-    message: `${opened} chats opened for follow-up.`,
-    duration: 5000
-  });
+    showToast({
+      title: "✅ WhatsApp Follow-ups",
+      message: data.message || "Follow-ups sent successfully.",
+      duration: 6000
+    });
+
+  } catch (err) {
+
+    console.error("Bulk WhatsApp follow-up error:", err);
+
+    showToast({
+      title: "❌ WhatsApp Error",
+      message: err.message || "Failed to send WhatsApp follow-ups.",
+      duration: 6000
+    });
+
+  } finally {
+
+    if (button) {
+      button.disabled = false;
+      button.innerHTML = "📲 Send WhatsApp follow-ups";
+    }
+
+  }
 
 };
 
@@ -534,11 +581,12 @@ if (quickActionsBox) {
 ) {
 
   quickActionsBox.innerHTML = `
-    <button class="btn btn-primary"
-      style="width:100%;margin-top:10px"
-      onclick="sendTodayFollowups()">
-      📲 Send WhatsApp follow-ups
-    </button>
+    <button type="button"
+  class="btn btn-primary"
+  style="width:100%;margin-top:10px"
+  onclick="event.stopPropagation(); sendTodayFollowups()">
+  📲 Send WhatsApp follow-ups
+</button>
 
     <button class="btn btn-outline"
       style="width:100%;margin-top:10px"
@@ -910,10 +958,10 @@ ${l.aiNextAction || ""}
       currentUserPlan === "pro" ||
       currentUserPlan === "agent"
       ? `
-      <button class="btn btn-primary"
-        onclick="sendWhatsApp('${l._id}')">
-        WhatsApp
-      </button>
+      <button type="button" class="btn btn-primary"
+  onclick="event.stopPropagation(); sendWhatsApp('${l._id}')">
+  WhatsApp
+</button>
       `
       : `
       <button class="btn btn-outline"

@@ -380,6 +380,109 @@ router.delete("/:id", auth, async (req, res) => {
     });
   }
 });
+
+/**
+ * @route   POST /api/leads/send-followups
+ * @desc    Send WhatsApp follow-ups to all due leads (PRO ONLY)
+ * @access  Private + Pro
+ */
+router.post("/send-followups", auth, async (req, res) => {
+  try {
+
+    if (
+      req.user.plan !== "pro" &&
+      req.user.plan !== "agent"
+    ) {
+      return res.status(403).json({
+        message: "WhatsApp follow-ups are a Pro feature"
+      });
+    }
+
+    const leads = await Lead.find({
+      user: req.user._id,
+      nextFollowUpAt: { $lte: new Date() }
+    });
+
+    if (!leads.length) {
+      return res.json({
+        message: "No follow-ups are due today.",
+        sent: 0,
+        failed: 0
+      });
+    }
+
+    let sent = 0;
+    let failed = 0;
+
+    for (const lead of leads) {
+
+      try {
+
+        if (!lead.phone) {
+          failed++;
+          continue;
+        }
+
+        const message = await generateMessage({
+          message: "follow up customer",
+          user: req.user
+        });
+
+        await sendWhatsAppMessage({
+          phone: lead.phone,
+          message
+        });
+
+        sent++;
+
+        // Keep track of the contact
+        lead.lastContactedAt = new Date();
+
+        // Move the next follow-up forward
+        lead.nextFollowUpAt = null;
+
+        if (!lead.activityLog) {
+          lead.activityLog = [];
+        }
+
+        lead.activityLog.push({
+          action: "WhatsApp follow-up sent"
+        });
+
+        await lead.save();
+
+      } catch (err) {
+
+        failed++;
+
+        console.error(
+          `WhatsApp follow-up failed for ${lead._id}:`,
+          err.message
+        );
+
+      }
+
+    }
+
+    res.json({
+      message: `${sent} WhatsApp follow-up(s) sent successfully.${failed ? ` ${failed} failed.` : ""}`,
+      sent,
+      failed
+    });
+
+  } catch (error) {
+
+    console.error(
+      "Bulk WhatsApp follow-up error:",
+      error
+    );
+
+    res.status(500).json({
+      message: "Failed to send WhatsApp follow-ups"
+    });
+
+  }
+});
 /**
  * @route   POST /api/leads/run-automation
  * @desc    Run follow-up automation manually (PRO ONLY)
