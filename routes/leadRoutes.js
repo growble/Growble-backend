@@ -161,29 +161,6 @@ await lead.save();
 
 const user = await User.findById(req.user._id);
 
-try {
-
-  const aiMsg = await generateMessage({
-    message: `New lead added:
-Name: ${lead.name}
-Phone: ${lead.phone}`,
-    user
-  });
-
-  await sendWhatsAppMessage({
-    phone: lead.phone,
-    message: aiMsg
-  });
-
-} catch (err) {
-
-  console.error(
-    "AI/WhatsApp Error:",
-    err.message
-  );
-
-}
-
 // 🎁 START FREE TRIAL WHEN FIRST LEAD ADDED
 if (user.plan === "free" && !user.planExpiresAt) {
 
@@ -383,106 +360,184 @@ router.delete("/:id", auth, async (req, res) => {
 
 /**
  * @route   POST /api/leads/send-followups
- * @desc    Send WhatsApp follow-ups to all due leads (PRO ONLY)
+ * @desc    Send due WhatsApp follow-ups and schedule the next follow-up
  * @access  Private + Pro
  */
+
+const activeFollowupRuns = new Set();
+
 router.post("/send-followups", auth, async (req, res) => {
-  try {
+  const userId = String(req.user._id);
 
-    if (
-      req.user.plan !== "pro" &&
-      req.user.plan !== "agent"
-    ) {
-      return res.status(403).json({
-        message: "WhatsApp follow-ups are a Pro feature"
-      });
-    }
-
-    const leads = await Lead.find({
-      user: req.user._id,
-      nextFollowUpAt: { $lte: new Date() }
+  // Prevent simultaneous duplicate runs from the same user
+  if (activeFollowupRuns.has(userId)) {
+    return res.status(409).json({
+      message: "A follow-up process is already running."
     });
+  }
 
-    if (!leads.length) {
-      return res.json({
-        message: "No follow-ups are due today.",
-        sent: 0,
-        failed: 0
+  activeFollowupRuns.add(userId);
+
+  try {
+    // Allow Pro and Agent plans
+    if (!["pro", "agent"].includes(req.user.plan)) {
+      return res.status(403).json({
+        message: "WhatsApp follow-ups require a Pro plan."
       });
     }
+
+    const user = await User.findById(req.user._id);
+
+    if (!user) {
+      return res.status(404).json({
+        message: "User account not found."
+      });
+    }
+
+    const now = new Date();
+
+    // Only select due leads.
+    // Do not message closed or lost leads.
+    const dueLeads = await Lead.find({
+      user: req.user._id,
+      nextFollowUpAt: { $lte: now },
+      status: { $nin: ["closed", "lost"] }
+    }).sort({ nextFollowUpAt: 1 });
+
+    if (!dueLeads.length) {
+      return res.json({
+        message: "No follow-ups are due.",
+        sent: 0,
+        failed: 0,
+        remaining: 0,
+        results: []
+      });
+    }
+
+    // Process a limited batch to avoid long-running HTTP requests.
+    const MAX_FOLLOWUPS_PER_RUN = 25;
+    const batch = dueLeads.slice(0, MAX_FOLLOWUPS_PER_RUN);
 
     let sent = 0;
     let failed = 0;
 
-    for (const lead of leads) {
+    const results = [];
 
+    for (const lead of batch) {
       try {
-
         if (!lead.phone) {
-          failed++;
-          continue;
+          throw new Error("Phone number is missing.");
         }
 
+        const phoneDigits = String(lead.phone).replace(/\D/g, "");
+
+        if (phoneDigits.length < 8 || phoneDigits.length > 15) {
+          throw new Error("Invalid phone number.");
+        }
+
+        // Generate a message using the existing Growble AI service.
+        const prompt = `
+Write a polite, natural WhatsApp follow-up message
+for a coaching institute.
+
+Lead name: ${lead.name || "Student"}
+Lead status: ${lead.status || "new"}
+Lead notes: ${lead.notes || "No additional notes"}
+
+Requirements:
+- Address the lead by name.
+- Keep the message short and conversational.
+- Make the message relevant to the lead's status and notes.
+- Ask one useful next-step question.
+- Do not invent fees, discounts, offers, or course details.
+- Do not use aggressive sales language.
+- Return only the WhatsApp message.
+`;
+
         const message = await generateMessage({
-          message: "follow up customer",
-          user: req.user
+          message: prompt,
+          user
         });
 
+        if (!message || !String(message).trim()) {
+          throw new Error("Message generation failed.");
+        }
+
+        // Send through Growble's existing WhatsApp API utility.
         await sendWhatsAppMessage({
           phone: lead.phone,
-          message
+          message: String(message).trim()
         });
 
-        sent++;
+        // Schedule the next follow-up 2 calendar days later.
+        const nextFollowUp = new Date();
+        nextFollowUp.setDate(nextFollowUp.getDate() + 2);
 
-        // Keep track of the contact
         lead.lastContactedAt = new Date();
-
-        // Move the next follow-up forward
-        lead.nextFollowUpAt = null;
+        lead.nextFollowUpAt = nextFollowUp;
 
         if (!lead.activityLog) {
           lead.activityLog = [];
         }
 
         lead.activityLog.push({
-          action: "WhatsApp follow-up sent"
+          action: "Automated WhatsApp follow-up sent"
+        });
+
+        lead.activityLog.push({
+          action: `Next follow-up scheduled for ${nextFollowUp.toISOString()}`
         });
 
         await lead.save();
 
-      } catch (err) {
+        sent++;
 
+        results.push({
+          leadId: lead._id,
+          name: lead.name,
+          status: "sent",
+          nextFollowUpAt: nextFollowUp
+        });
+
+      } catch (leadError) {
         failed++;
 
         console.error(
-          `WhatsApp follow-up failed for ${lead._id}:`,
-          err.message
+          `Follow-up failed for lead ${lead._id}:`,
+          leadError
         );
 
+        results.push({
+          leadId: lead._id,
+          name: lead.name,
+          status: "failed",
+          reason: leadError.message
+        });
       }
-
     }
 
+    const remaining = Math.max(0, dueLeads.length - batch.length);
+
     res.json({
-      message: `${sent} WhatsApp follow-up(s) sent successfully.${failed ? ` ${failed} failed.` : ""}`,
+      message: `${sent} follow-up(s) sent. ${failed} failed.`,
       sent,
-      failed
+      failed,
+      remaining,
+      results
     });
 
   } catch (error) {
-
-    console.error(
-      "Bulk WhatsApp follow-up error:",
-      error
-    );
+    console.error("Bulk follow-up error:", error);
 
     res.status(500).json({
-      message: "Failed to send WhatsApp follow-ups"
+      message: "Unable to process WhatsApp follow-ups."
     });
 
+  } finally {
+    activeFollowupRuns.delete(userId);
   }
 });
+
 /**
  * @route   POST /api/leads/run-automation
  * @desc    Run follow-up automation manually (PRO ONLY)

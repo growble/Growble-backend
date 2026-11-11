@@ -365,7 +365,7 @@ window.sendTodayFollowups = async function () {
     if (!res.ok) {
       throw new Error(data?.message || "Failed to send follow-ups");
     }
-
+    await loadLeads();
     showToast({
       title: "✅ WhatsApp Follow-ups",
       message: data.message || "Follow-ups sent successfully.",
