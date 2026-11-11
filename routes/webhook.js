@@ -148,6 +148,9 @@ phoneNumberId: user.whatsapp.phoneNumberId
     res.sendStatus(200);
   } catch (err) {
     console.error(err);
+    if (err.code === "AI_REPLY_LIMIT_REACHED") {
+      return res.sendStatus(200);
+    }
     res.sendStatus(500);
   }
 });

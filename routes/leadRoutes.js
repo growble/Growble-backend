@@ -414,6 +414,16 @@ router.post("/send-followups", auth, async (req, res) => {
       });
     }
 
+    if (
+      !user.whatsapp?.connected ||
+      !user.whatsapp.accessToken ||
+      !user.whatsapp.phoneNumberId
+    ) {
+      return res.status(400).json({
+        message: "Connect WhatsApp before sending follow-ups."
+      });
+    }
+
     // Process a limited batch to avoid long-running HTTP requests.
     const MAX_FOLLOWUPS_PER_RUN = 25;
     const batch = dueLeads.slice(0, MAX_FOLLOWUPS_PER_RUN);
@@ -456,7 +466,8 @@ Requirements:
 
         const message = await generateMessage({
           message: prompt,
-          user
+          user,
+          lead
         });
 
         if (!message || !String(message).trim()) {
@@ -466,7 +477,9 @@ Requirements:
         // Send through Growble's existing WhatsApp API utility.
         await sendWhatsAppMessage({
           phone: lead.phone,
-          message: String(message).trim()
+          message: String(message).trim(),
+          accessToken: user.whatsapp.accessToken,
+          phoneNumberId: user.whatsapp.phoneNumberId
         });
 
         // Schedule the next follow-up 2 calendar days later.
@@ -513,10 +526,14 @@ Requirements:
           status: "failed",
           reason: leadError.message
         });
+
+        if (leadError.code === "AI_REPLY_LIMIT_REACHED") {
+          break;
+        }
       }
     }
 
-    const remaining = Math.max(0, dueLeads.length - batch.length);
+    const remaining = Math.max(0, dueLeads.length - results.length);
 
     res.json({
       message: `${sent} follow-up(s) sent. ${failed} failed.`,
@@ -595,17 +612,27 @@ router.post("/:id/send-whatsapp", auth, async (req, res) => {
       });
     }
 
-    const message =
-await generateMessage({
-message:"follow up customer",
-user:lead.user
-});
+    if (
+      !req.user.whatsapp?.connected ||
+      !req.user.whatsapp.accessToken ||
+      !req.user.whatsapp.phoneNumberId
+    ) {
+      return res.status(400).json({
+        message: "Connect WhatsApp before sending messages."
+      });
+    }
 
-    const sendWhatsAppMessage = require("../utils/whatsappSender");
+    const message = await generateMessage({
+      message: "follow up customer",
+      user: req.user,
+      lead
+    });
 
     await sendWhatsAppMessage({
       phone: lead.phone,
-      message
+      message,
+      accessToken: req.user.whatsapp.accessToken,
+      phoneNumberId: req.user.whatsapp.phoneNumberId
     });
 
     res.json({
@@ -614,6 +641,9 @@ user:lead.user
 
   } catch (error) {
     console.error("WhatsApp send error:", error);
+    if (error.code === "AI_REPLY_LIMIT_REACHED") {
+      return res.status(429).json({ message: error.message });
+    }
     res.status(500).json({
       message: "Failed to send WhatsApp message"
     });

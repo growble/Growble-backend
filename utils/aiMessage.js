@@ -35,7 +35,9 @@ if (!dbUser.automationUsage.usage) {
 if (
   (dbUser.automationUsage.usage.aiReplies || 0) >= limit
 ) {
-  return "AI reply limit reached. Upgrade your plan.";
+  const error = new Error("AI reply limit reached. Upgrade your plan.");
+  error.code = "AI_REPLY_LIMIT_REACHED";
+  throw error;
 }
 const lower =
 message.toLowerCase();
@@ -320,7 +322,11 @@ messages:[
 role:"system",
 content:systemPrompt
 },
-...history
+...history,
+...(history[history.length - 1]?.role === "user" &&
+history[history.length - 1]?.content === message
+  ? []
+  : [{ role: "user", content: message }])
 ],
 
 temperature:0.7,
