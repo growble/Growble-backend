@@ -216,6 +216,30 @@ whatsapp: {
   }
 },
 
+facebookLeadAds: {
+  connectedAt: Date,
+  pages: [
+    {
+      pageId: {
+        type: String,
+        required: true
+      },
+      pageName: {
+        type: String,
+        default: ""
+      },
+      pageAccessToken: {
+        type: String,
+        select: false
+      },
+      connectedAt: {
+        type: Date,
+        default: Date.now
+      }
+    }
+  ]
+},
+
   },
 
   {

@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="theme-color" content="#0b1220"/>
+  <meta name="robots" content="noindex,nofollow"/>
+  <title>Connect Facebook Lead Ads | Growble</title>
+  <style>
+    * { box-sizing: border-box; font-family: Arial, Helvetica, sans-serif; }
+    body {
+      min-height: 100vh;
+      margin: 0;
+      padding: 24px;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(135deg,#0b1220,#172340);
+      color: #eef5fc;
+    }
+    .card {
+      width: min(620px,100%);
+      padding: 28px;
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 20px;
+      background: rgba(255,255,255,.06);
+      box-shadow: 0 16px 48px rgba(0,0,0,.32);
+    }
+    .brand { color: #00d4ff; font-size: 24px; font-weight: 900; }
+    h1 { margin: 18px 0 8px; font-size: 24px; }
+    p { color: #c3d0df; font-size: 14px; line-height: 1.6; }
+    .note {
+      margin: 16px 0;
+      padding: 12px 14px;
+      border: 1px solid rgba(0,212,255,.16);
+      border-radius: 12px;
+      background: rgba(0,212,255,.06);
+      color: #c3d0df;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    .btn {
+      width: 100%;
+      margin-top: 12px;
+      padding: 13px 16px;
+      border: 0;
+      border-radius: 12px;
+      background: #1877f2;
+      color: white;
+      font-size: 15px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+    .btn:disabled { cursor: wait; opacity: .6; }
+    .btn-secondary { background: rgba(255,255,255,.1); }
+    .pages { margin-top: 16px; }
+    .page-option {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      margin-top: 8px;
+      padding: 12px;
+      border: 1px solid rgba(255,255,255,.1);
+      border-radius: 12px;
+      background: rgba(0,0,0,.16);
+    }
+    .page-option input { width: 18px; height: 18px; accent-color: #00d4ff; }
+    .page-option label { flex: 1; cursor: pointer; }
+    .status { min-height: 22px; margin: 14px 0 0; font-size: 13px; }
+    .status.error { color: #ffaaaa; }
+    .status.success { color: #9af0c1; }
+    .links { display: flex; justify-content: space-between; gap: 12px; margin-top: 20px; }
+    a { color: #8beaff; text-decoration: none; font-weight: 700; }
+    a:hover { text-decoration: underline; }
+    [hidden] { display: none !important; }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <div class="brand">Growble</div>
+    <h1>Connect Facebook Lead Ads</h1>
+    <p>Authorize your Facebook account, choose the Pages that run lead forms, and Growble will add new form submissions to your leads dashboard.</p>
+    <div class="note">
+      Available on Pro and Agent. Facebook Lead Ads forms must collect a phone number. Meta may require app review and the <code>leads_retrieval</code> permission before this works for other people’s Pages. Configure the Meta Page webhook for the <code>leadgen</code> field and set <code>META_TOKEN_ENCRYPTION_KEY</code> to a persistent 32-byte hexadecimal key.
+    </div>
+
+    <div id="connectedPages" class="pages" hidden>
+      <strong>Connected Pages</strong>
+      <div id="connectedPageList"></div>
+    </div>
+
+    <button id="authorizeBtn" class="btn" type="button">Continue with Facebook</button>
+    <div id="pageSelection" class="pages" hidden>
+      <strong>Select Pages to connect</strong>
+      <div id="availablePageList"></div>
+      <button id="connectBtn" class="btn" type="button">Connect selected Pages</button>
+    </div>
+    <div id="status" class="status" role="status" aria-live="polite"></div>
+    <div class="links">
+      <a href="/index.html">Back to dashboard</a>
+      <a href="/pricing.html">View plans</a>
+    </div>
+  </main>
+
+  <div id="fb-root"></div>
+  <script src="/connect-facebook-leads.js"></script>
+  <script async defer crossorigin="anonymous" src="https://connect.facebook.net/en_US/sdk.js"
+    onerror="window.dispatchEvent(new Event('facebook-sdk-error'))"></script>
+</body>
+</html>

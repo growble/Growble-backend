@@ -31,6 +31,10 @@ const LeadSchema = new mongoose.Schema(
       default: "manual"
     },
 
+    metaLeadId: {
+      type: String
+    },
+
     status: {
       type: String,
       enum: ["new", "contacted", "interested", "closed", "lost"],
@@ -168,5 +172,12 @@ aiLeadTemperature: {
 );
 // ✅ Unique phone per user (compound index)
 LeadSchema.index({ user: 1, phone: 1 }, { unique: true });
+LeadSchema.index(
+  { user: 1, metaLeadId: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { metaLeadId: { $type: "string" } }
+  }
+);
 
 module.exports = mongoose.models.Lead || mongoose.model("Lead", LeadSchema);

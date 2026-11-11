@@ -1,9 +1,11 @@
 const express = require("express");
 const router = express.Router();
+const crypto = require("crypto");
 const Lead = require("../models/Lead");
 const User = require("../models/User");
 const PLAN_LIMITS = require("../config/PlanLimits");
 const sendWhatsAppMessage = require("../utils/whatsappSender");
+const facebookLeadAdsService = require("../services/facebookLeadAds.service");
 
 router.get("/", (req, res) => {
   const VERIFY_TOKEN =
@@ -21,6 +23,30 @@ process.env.WEBHOOK_VERIFY_TOKEN;
 
 router.post("/", async (req, res) => {
   try {
+    const appSecret = process.env.META_APP_SECRET;
+    const signature = req.get("x-hub-signature-256");
+    if (!appSecret || !signature || !req.rawBody) {
+      return res.sendStatus(401);
+    }
+
+    const expectedSignature = `sha256=${crypto
+      .createHmac("sha256", appSecret)
+      .update(req.rawBody)
+      .digest("hex")}`;
+    const expectedBuffer = Buffer.from(expectedSignature);
+    const signatureBuffer = Buffer.from(signature);
+    if (
+      expectedBuffer.length !== signatureBuffer.length ||
+      !crypto.timingSafeEqual(expectedBuffer, signatureBuffer)
+    ) {
+      return res.sendStatus(401);
+    }
+
+    if (req.body.object === "page") {
+      await facebookLeadAdsService.processWebhook(req.body);
+      return res.sendStatus(200);
+    }
+
     const entry = req.body.entry?.[0];
     const changes = entry?.changes?.[0];
     const phoneNumberId = changes?.value?.metadata?.phone_number_id;

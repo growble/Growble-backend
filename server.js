@@ -51,7 +51,11 @@ app.get("/payment", (req, res) => {
 app.use("/api/webhook", razorpayWebhookRoutes);
 
 /* 🔹 JSON FOR REST APIS */
-app.use(express.json());
+app.use(express.json({
+  verify: (req, res, buffer) => {
+    req.rawBody = Buffer.from(buffer);
+  }
+}));
 
 /* 🔹 ADMIN PANEL STATIC */
 app.use("/admin-panel", express.static("admin"));
