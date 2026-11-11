@@ -100,6 +100,8 @@ conversation: [
   {
     role: String,
     content: String,
+    providerMessageId: String,
+    replyToMessageId: String,
     createdAt: {
       type: Date,
       default: Date.now

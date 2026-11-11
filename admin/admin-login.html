@@ -1,38 +1,13 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Admin Login</title>
+  <meta charset="UTF-8"/>
+  <meta http-equiv="refresh" content="0;url=/login.html"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Growble Login</title>
 </head>
 <body>
-
-<h2>Admin Login</h2>
-
-<input id="email" placeholder="Email"><br><br>
-<input id="password" type="password" placeholder="Password"><br><br>
-<button onclick="login()">Login</button>
-
-<script>
-function login() {
-  fetch("http://localhost:5000/api/auth/login", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      email: document.getElementById("email").value,
-      password: document.getElementById("password").value
-    })
-  })
-  .then(res => res.json())
-  .then(data => {
-    if (!data.token) {
-      alert("Login failed");
-      return;
-    }
-
-    localStorage.setItem("token", data.token);
-    window.location.href = "/admin.html";
-  });
-}
-</script>
-
+  <p>Admin sign-in now uses Growble’s main login. <a href="/login.html">Continue to login</a>.</p>
+  <script>window.location.replace("/login.html");</script>
 </body>
 </html>

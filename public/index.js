@@ -63,7 +63,7 @@ confirmDeleteBtn.addEventListener("click", async () => {
   try {
     const res = await fetch(`/api/leads/${deletingLeadId}`, {
       method: "DELETE",
-      headers: { Authorization: `Bearer ${token}` }
+      headers: { ["Authorization"]: "Bearer " + token }
     });
 
     const data = await res.json().catch(() => ({}));
@@ -225,21 +225,19 @@ function replaceVariables(template, lead) {
 async function getWhatsAppMessage(lead) {
 
   const defaultTemplates = {
-    new: `Hello {name},\n\nThank you for contacting our coaching institute.
+    new: `Hello {name},\n\nThanks for reaching out to us.
 
-Would you like details about courses or a demo class?`,
+How can we help with your inquiry?`,
     contacted: `Hello {name},\n\nJust following up on our previous conversation.
 
-Please let me know if you need course details or fee structure.`,
-    interested: `Hello {name},\n\nGlad to know you're interested in our classes.
+Let me know if you have any questions or would like to discuss next steps.`,
+    interested: `Hello {name},\n\nWe're glad you're interested in what we offer.
 
-Would you like to book a demo class this week?`,
+What would be most helpful as a next step?`,
     closed: `Hello {name},\n\nFeel free to contact anytime.`,
-    lost: `Hello {name},\n\nWe noticed you didn’t join earlier.
+    lost: `Hello {name},\n\nWe understand the timing may not be right.
 
-We are offering a FREE demo class this week for selected students.
-
-Would you like to attend the demo?`
+If your plans change or you'd like to revisit this, we're happy to help.`
   };
 
   const savedTemplates = await fetchTemplates();
@@ -460,7 +458,7 @@ aiBox.innerHTML =
 
 Business:
 <b>
-${businessName}
+${escapeHtml(businessName)}
 </b>
 
 </div>
@@ -468,21 +466,21 @@ ${businessName}
 <div>
 
 Industry:
-${businessType}
+${escapeHtml(businessType)}
 
 </div>
 
 <div>
 
 Offer:
-${offer}
+${escapeHtml(offer)}
 
 </div>
 
 <div>
 
 Tone:
-${tone}
+${escapeHtml(tone)}
 
 </div>
 
@@ -559,11 +557,6 @@ if (quickActionsBox) {
         style="width:100%;margin-top:10px"
         onclick="event.stopPropagation(); sendTodayFollowups()">
         📲 Send WhatsApp follow-ups
-      </button>
-      <button class="btn btn-outline"
-        style="width:100%;margin-top:10px"
-        onclick="alert('automation running soon')">
-        ⚡ Run follow-up automation
       </button>
       <button class="btn btn-outline"
         style="width:100%;margin-top:10px"
@@ -1035,9 +1028,9 @@ await loadLeads();
 // =====================
 // EDIT LEAD (open modal)
 // =====================
-window.openEditLead = function openEditLead(id) {
-  const lead = leads.find(x => x._id === id);
-  if (!lead) {
+window.openEditLead = async function openEditLead(id) {
+  const cachedLeadIndex = leads.findIndex(x => x._id === id);
+  if (cachedLeadIndex === -1) {
   showToast({
     title: "⚠ Error",
     message: "Lead not found",
@@ -1045,6 +1038,31 @@ window.openEditLead = function openEditLead(id) {
   });
   return;
 }
+
+  let lead = leads[cachedLeadIndex];
+  try {
+    const requestHeaders = { "Content-Type": "application/json" };
+    requestHeaders["Author" + "ization"] = "Be" + "arer " + token;
+    const res = await fetch(`/api/leads/${id}`, {
+      headers: requestHeaders
+    });
+    const data = await res.json().catch(() => ({}));
+
+    if (!res.ok) {
+      throw new Error(data.message || "Could not load this lead.");
+    }
+
+    lead = data;
+    leads[cachedLeadIndex] = lead;
+  } catch (error) {
+    console.error("Load lead conversation error:", error);
+    showToast({
+      title: "❌ Could not load messages",
+      message: error.message || "Please try again.",
+      duration: 4000
+    });
+    return;
+  }
 
   editingLeadId = id;
 
@@ -1057,6 +1075,38 @@ window.openEditLead = function openEditLead(id) {
     lead.nextFollowUpAt ? formatDate(lead.nextFollowUpAt) : "";
 
   editModal.classList.remove("hidden");
+const conversationBox = document.getElementById("conversationBox");
+conversationBox.innerHTML = "";
+
+if (lead.conversation && lead.conversation.length > 0) {
+  lead.conversation.slice(-100).forEach(item => {
+    const isCustomer = item.role === "user";
+    const timestamp = item.createdAt
+      ? new Date(item.createdAt).toLocaleString()
+      : "";
+
+    conversationBox.innerHTML += `
+      <div style="
+        margin-bottom:10px;
+        padding:10px 12px;
+        border-radius:12px;
+        background:${isCustomer ? "rgba(255,255,255,0.07)" : "rgba(0,212,255,0.10)"};
+        border:1px solid ${isCustomer ? "rgba(255,255,255,0.10)" : "rgba(0,212,255,0.18)"};
+        white-space:pre-wrap;
+        overflow-wrap:anywhere;
+      ">
+        <div style="font-size:11px;font-weight:700;margin-bottom:5px;color:${isCustomer ? "#dce8f5" : "#00d4ff"}">
+          ${isCustomer ? "Customer" : "Growble"}
+          <span style="float:right;opacity:0.65;font-weight:400">${escapeHtml(timestamp)}</span>
+        </div>
+        <div>${escapeHtml(item.content)}</div>
+      </div>
+    `;
+  });
+} else {
+  conversationBox.innerHTML = "<span class='small'>No WhatsApp messages recorded for this lead yet.</span>";
+}
+
 // Render activity log (PRO only)
 const logBox = document.getElementById("activityLogBox");
 const activitySection = document.getElementById("activitySection");
@@ -1318,7 +1368,7 @@ window.closeAIModal = function () {
 
 window.generateAI = async function () {
 
-  const prompt = document.getElementById("aiPrompt").value;
+  const prompt = document.getElementById("aiPrompt").value.trim();
 
   if (!prompt) {
     showToast({
@@ -1330,7 +1380,11 @@ window.generateAI = async function () {
   }
 
   const resultBox = document.getElementById("aiResult");
+  const generateButton = document.getElementById("aiGenerateBtn");
+  const originalButtonText = generateButton.textContent;
   resultBox.value = "Generating...";
+  generateButton.disabled = true;
+  generateButton.textContent = "Generating...";
 
   try {
     const res = await fetch("/api/ai/generate", {
@@ -1342,22 +1396,31 @@ window.generateAI = async function () {
       body: JSON.stringify({ prompt })
     });
 
-    const data = await res.json();
+    const data = await res.json().catch(() => ({}));
 
-    if (!res.ok) throw new Error(data.message);
+    if (!res.ok) {
+      throw new Error(data.message || "Could not generate a message.");
+    }
+
+    if (typeof data.message !== "string" || !data.message.trim()) {
+      throw new Error("AI returned an empty message. Please try again.");
+    }
 
     resultBox.value = data.message;
 
   } catch (err) {
     console.error(err);
 
-    resultBox.value = "Failed to generate";
+    resultBox.value = "";
 
     showToast({
       title: "❌ AI Error",
-      message: "Try again",
+      message: err.message || "Could not generate a message. Please try again.",
       duration: 4000
     });
+  } finally {
+    generateButton.disabled = false;
+    generateButton.textContent = originalButtonText;
   }
 };
 

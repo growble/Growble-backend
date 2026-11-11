@@ -224,6 +224,29 @@ router.get("/", auth, async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 });
+
+router.get("/:id", auth, async (req, res) => {
+  try {
+    const lead = await Lead.findOne({
+      _id: req.params.id,
+      user: req.user._id
+    });
+
+    if (!lead) {
+      return res.status(404).json({ message: "Lead not found" });
+    }
+
+    const result = lead.toObject();
+    if (!["pro", "agent"].includes(req.user.plan)) {
+      delete result.activityLog;
+    }
+
+    res.json(result);
+  } catch (error) {
+    console.error("Get lead error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
  
 
 
@@ -472,9 +495,9 @@ router.post("/send-followups", auth, async (req, res) => {
         // Generate a message using the existing Growble AI service.
         const prompt = `
 Write a polite, natural WhatsApp follow-up message
-for a coaching institute.
+for this business.
 
-Lead name: ${lead.name || "Student"}
+Lead name: ${lead.name || "Customer"}
 Lead status: ${lead.status || "new"}
 Lead notes: ${lead.notes || "No additional notes"}
 
@@ -483,7 +506,7 @@ Requirements:
 - Keep the message short and conversational.
 - Make the message relevant to the lead's status and notes.
 - Ask one useful next-step question.
-- Do not invent fees, discounts, offers, or course details.
+- Do not invent prices, discounts, offers, or business details.
 - Do not use aggressive sales language.
 - Return only the WhatsApp message.
 `;
@@ -499,11 +522,16 @@ Requirements:
         }
 
         // Send through Growble's existing WhatsApp API utility.
-        await sendWhatsAppMessage({
+        const providerMessageId = await sendWhatsAppMessage({
           phone: lead.phone,
           message: String(message).trim(),
           accessToken: user.whatsapp.accessToken,
           phoneNumberId: user.whatsapp.phoneNumberId
+        });
+        lead.conversation.push({
+          role: "assistant",
+          content: String(message).trim(),
+          providerMessageId
         });
 
         // Schedule the next follow-up 2 calendar days later.
@@ -663,12 +691,19 @@ router.post("/:id/send-whatsapp", auth, async (req, res) => {
       lead
     });
 
-    await sendWhatsAppMessage({
+    const providerMessageId = await sendWhatsAppMessage({
       phone: lead.phone,
       message,
       accessToken: req.user.whatsapp.accessToken,
       phoneNumberId: req.user.whatsapp.phoneNumberId
     });
+
+    lead.conversation.push({
+      role: "assistant",
+      content: message,
+      providerMessageId
+    });
+    await lead.save();
 
     await recordPlanUsage(req.user, "followUps");
 

@@ -23,6 +23,7 @@ router.post("/", async (req, res) => {
   try {
     const entry = req.body.entry?.[0];
     const changes = entry?.changes?.[0];
+    const phoneNumberId = changes?.value?.metadata?.phone_number_id;
     const message = changes?.value?.messages?.[0];
 
     if (message) {
@@ -34,16 +35,37 @@ router.post("/", async (req, res) => {
 
       const lowerText = text.toLowerCase();
 
-      console.log("Incoming:", text);
-
       // ✅ STOP FOLLOW-UP
-      const lead = await Lead.findOne({ phone: from });
-      const user = lead ? await User.findById(lead.user) : null;
+      const user = phoneNumberId
+        ? await User.findOne({
+          "whatsapp.phoneNumberId": phoneNumberId,
+          "whatsapp.connected": true
+        })
+        : null;
+      const lead = user
+        ? await Lead.findOne({ user: user._id, phone: from })
+        : null;
 
-if (lead && text) {
+      const alreadyRecorded = Boolean(
+        lead &&
+        message.id &&
+        lead.conversation.some(item => item.providerMessageId === message.id)
+      );
+      const alreadyReplied = Boolean(
+        lead &&
+        message.id &&
+        lead.conversation.some(item => item.replyToMessageId === message.id)
+      );
+
+      if (alreadyReplied) {
+        return res.sendStatus(200);
+      }
+
+if (lead && text && !alreadyRecorded) {
   lead.conversation.push({
     role: "user",
-    content: text
+    content: text,
+    providerMessageId: message.id
   });
 
   await lead.save();
@@ -103,18 +125,8 @@ if (
 
 
       console.log("AI Reply:", reply);
-if (lead) {
-  lead.conversation.push({
-    role: "assistant",
-    content: reply
-  });
 
-  await lead.save();
-}
-
-
-
-if (
+      if (
   lead &&
   (
     lowerText.includes("call me") ||
@@ -131,12 +143,22 @@ if (
         user.whatsapp.accessToken &&
         user.whatsapp.phoneNumberId
       ) {
-        await sendWhatsAppMessage({
+        const providerMessageId = await sendWhatsAppMessage({
           phone: from,
           message: reply,
           accessToken: user.whatsapp.accessToken,
           phoneNumberId: user.whatsapp.phoneNumberId
         });
+
+        if (lead) {
+          lead.conversation.push({
+            role: "assistant",
+            content: reply,
+            providerMessageId,
+            replyToMessageId: message.id
+          });
+          await lead.save();
+        }
       }
     }
 

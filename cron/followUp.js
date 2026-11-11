@@ -47,7 +47,7 @@ cron.schedule("* * * * *", async () => {
       }
 
       const message = followUp.message.replace("{{name}}", lead.name);
-      await sendWhatsAppMessage({
+      const providerMessageId = await sendWhatsAppMessage({
         phone: lead.phone,
         message,
         accessToken: user.whatsapp.accessToken,
@@ -55,6 +55,11 @@ cron.schedule("* * * * *", async () => {
       });
 
       await recordPlanUsage(user, "followUps");
+      lead.conversation.push({
+        role: "assistant",
+        content: message,
+        providerMessageId
+      });
       lead.followUpStep += 1;
       lead.lastMessageAt = new Date();
       await lead.save();

@@ -17,7 +17,7 @@ const sendWhatsAppMessage = async ({
 
   try {
 
-    await axios.post(
+    const response = await axios.post(
       `https://graph.facebook.com/v23.0/${phoneNumberId}/messages`,
       {
         messaging_product: "whatsapp",
@@ -36,6 +36,7 @@ const sendWhatsAppMessage = async ({
     );
 
     console.log("✅ WhatsApp sent:", phone);
+    return response.data.messages?.[0]?.id || null;
 
   } catch (err) {
 

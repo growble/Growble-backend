@@ -3,6 +3,7 @@ const router = express.Router();
 
 const User = require("../models/User");
 const Lead = require("../models/Lead.js");
+const PLAN_LIMITS = require("../config/PlanLimits");
 
 const authMiddleware = require("../middleware/authMiddleware");
 const adminMiddleware = require("../middleware/adminMiddleware");
@@ -17,18 +18,37 @@ router.get(
   adminMiddleware,
   async (req, res) => {
     try {
+      const customerFilter = { role: "user" };
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
       const [
         totalUsers,
-        activeUsers,
+        activeUsersLast7Days,
+        connectedWhatsAppUsers,
+        aiConfiguredUsers,
         planStats,
         totalLeads,
         leadsByStatus,
+        monthlyUsage,
         recentUsers
       ] = await Promise.all([
-        User.countDocuments(),
-        User.countDocuments({ isActive: true }),
+        User.countDocuments(customerFilter),
+        User.countDocuments({
+          ...customerFilter,
+          lastLogin: { $gte: sevenDaysAgo }
+        }),
+        User.countDocuments({
+          ...customerFilter,
+          "whatsapp.connected": true
+        }),
+        User.countDocuments({
+          ...customerFilter,
+          aiSetupCompleted: true
+        }),
 
         User.aggregate([
+          { $match: customerFilter },
           { $group: { _id: "$plan", count: { $sum: 1 } } }
         ]),
 
@@ -38,7 +58,34 @@ router.get(
           { $group: { _id: "$status", count: { $sum: 1 } } }
         ]),
 
-        User.find()
+        User.aggregate([
+          { $match: customerFilter },
+          {
+            $group: {
+              _id: null,
+              aiReplies: {
+                $sum: {
+                  $cond: [
+                    { $gt: ["$automationUsage.usage.resetAt", new Date()] },
+                    { $ifNull: ["$automationUsage.usage.aiReplies", 0] },
+                    0
+                  ]
+                }
+              },
+              followUps: {
+                $sum: {
+                  $cond: [
+                    { $gt: ["$automationUsage.usage.resetAt", new Date()] },
+                    { $ifNull: ["$automationUsage.usage.followUps", 0] },
+                    0
+                  ]
+                }
+              }
+            }
+          }
+        ]),
+
+        User.find(customerFilter)
           .sort({ createdAt: -1 })
           .limit(5)
           .select("name email plan createdAt")
@@ -47,13 +94,19 @@ router.get(
       res.json({
         users: {
           total: totalUsers,
-          active: activeUsers
+          activeLast7Days: activeUsersLast7Days,
+          whatsappConnected: connectedWhatsAppUsers,
+          aiConfigured: aiConfiguredUsers
         },
         leads: {
           total: totalLeads,
           byStatus: leadsByStatus
         },
         plans: planStats,
+        usage: {
+          aiReplies: monthlyUsage[0]?.aiReplies || 0,
+          followUps: monthlyUsage[0]?.followUps || 0
+        },
         recentUsers
       });
     } catch (err) {
@@ -79,42 +132,72 @@ router.get(
         limit = 10,
         search = "",
         plan,
-        role,
         status
       } = req.query;
 
-      const query = {};
+      const parsedPage = Math.max(Number.parseInt(page, 10) || 1, 1);
+      const parsedLimit = Math.min(
+        Math.max(Number.parseInt(limit, 10) || 10, 1),
+        100
+      );
+      const query = { role: "user" };
 
       // 🔍 Search by name or email
-      if (search) {
+      if (typeof search === "string" && search.trim()) {
+        const searchExpression = search.trim().replace(
+          /[.*+?^${}()|[\]\\]/g,
+          "\\$&"
+        );
         query.$or = [
-          { name: { $regex: search, $options: "i" } },
-          { email: { $regex: search, $options: "i" } }
+          { name: { $regex: searchExpression, $options: "i" } },
+          { email: { $regex: searchExpression, $options: "i" } },
+          { businessName: { $regex: searchExpression, $options: "i" } }
         ];
       }
 
       // 🎯 Filters
-      if (plan) query.plan = plan;
-      if (role) query.role = role;
+      if (["free", "starter", "pro", "agent"].includes(plan)) {
+        query.plan = plan;
+      }
       if (status === "active") query.isActive = true;
       if (status === "suspended") query.isActive = false;
 
       const users = await User.find(query)
         .select(
-          "name email plan role isActive automationUsage.count createdAt"
+          "name email businessName plan planExpiresAt isActive lastLogin createdAt automationUsage.usage.aiReplies automationUsage.usage.followUps automationUsage.usage.resetAt whatsapp.connected aiSetupCompleted"
         )
         .sort({ createdAt: -1 })
-        .skip((page - 1) * limit)
-        .limit(Number(limit));
+        .skip((parsedPage - 1) * parsedLimit)
+        .limit(parsedLimit);
 
       const total = await User.countDocuments(query);
+      const usersWithUsage = users.map(user => {
+        const userObject = user.toObject();
+        const limits = PLAN_LIMITS[user.plan] || PLAN_LIMITS.free;
+        const usage = user.automationUsage?.usage || {};
+        const usageIsCurrent = usage.resetAt && usage.resetAt > new Date();
+
+        return {
+          ...userObject,
+          usage: {
+            aiReplies: {
+              used: usageIsCurrent ? usage.aiReplies || 0 : 0,
+              limit: limits.aiReplies
+            },
+            followUps: {
+              used: usageIsCurrent ? usage.followUps || 0 : 0,
+              limit: limits.followUps
+            }
+          }
+        };
+      });
 
       res.json({
-        users,
+        users: usersWithUsage,
         pagination: {
           total,
-          page: Number(page),
-          pages: Math.ceil(total / limit)
+          page: parsedPage,
+          pages: Math.ceil(total / parsedLimit)
         }
       });
     } catch (err) {

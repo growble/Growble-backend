@@ -107,7 +107,43 @@ height:56px;
   box-shadow:0 18px 60px rgba(0,0,0,0.45);
 }
 
-    /* pipeline */
+.dashboard-tools{
+  display:grid;
+  gap:8px;
+  margin-top:10px;
+}
+
+.dashboard-tool-link{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:10px 12px;
+  border:1px solid rgba(255,255,255,0.09);
+  border-radius:12px;
+  background:rgba(0,0,0,0.18);
+  color:#dce8f5;
+  font-size:13px;
+  font-weight:700;
+  text-decoration:none;
+  transition:background .2s ease,border-color .2s ease;
+}
+
+.dashboard-tool-link:hover{
+  background:rgba(0,212,255,0.08);
+  border-color:rgba(0,212,255,0.3);
+}
+
+.dashboard-tool-icon{
+  display:grid;
+  width:30px;
+  height:30px;
+  flex:none;
+  place-items:center;
+  border-radius:9px;
+  background:rgba(0,212,255,0.1);
+}
+
+/* pipeline */
     .pipeline{
       display:grid;
       grid-template-columns: repeat(4,1fr);
@@ -594,6 +630,22 @@ Loading AI...
 
 </div>
 
+<div class="card-title" style="margin-top:18px;">Free Business Tools</div>
+<div class="dashboard-tools" aria-label="Free Growble business tools">
+  <a class="dashboard-tool-link" href="/tools/quotation-generator.html">
+    <span class="dashboard-tool-icon" aria-hidden="true">🧾</span>
+    Quotation Generator
+  </a>
+  <a class="dashboard-tool-link" href="/tools/invoice-generator.html">
+    <span class="dashboard-tool-icon" aria-hidden="true">📄</span>
+    GST Invoice Generator
+  </a>
+  <a class="dashboard-tool-link" href="/tools/gst-calculator.html">
+    <span class="dashboard-tool-icon" aria-hidden="true">％</span>
+    GST Calculator
+  </a>
+</div>
+
       </div>
 
     </div>
@@ -630,7 +682,7 @@ Loading AI...
   <!-- ✅ Use external JS -->
 <!-- ✅ Edit Lead Modal -->
 <div id="editLeadModal" class="modal hidden">
-  <div class="modal-box">
+  <div class="modal-box" style="max-height:calc(100vh - 32px);overflow-y:auto;width:min(600px,calc(100vw - 32px));">
     <h2 style="margin-bottom: 8px;">Edit Lead</h2>
 
     <form id="editLeadForm">
@@ -653,6 +705,11 @@ Loading AI...
         <button type="button" id="closeEditModal" class="btn btn-danger">Cancel</button>
       </div>
     </form>
+<div id="conversationSection" style="margin-top:20px;">
+  <h4 style="color:#00d4ff;">WhatsApp Conversation</h4>
+  <p class="small">Messages sent through Growble and customer replies appear here.</p>
+  <div id="conversationBox" style="max-height:260px; overflow:auto; margin-top:10px;"></div>
+</div>
 <div id="activitySection" style="margin-top:20px;">
   <h4 style="color:#00d4ff;">Activity Log</h4>
   <div id="activityLogBox" style="max-height:150px; overflow:auto; margin-top:10px;"></div>
@@ -742,14 +799,14 @@ Loading AI...
     <h2>AI Message Generator</h2>
 
     <input id="aiPrompt"
-      placeholder="Example: Student asked fees but didn't reply"
+      placeholder="Example: A customer asked for pricing but hasn't replied"
     />
 
     <div style="margin-top:10px;">
-      <button class="btn btn-primary" onclick="generateAI()">
+      <button type="button" id="aiGenerateBtn" class="btn btn-primary" onclick="generateAI()">
         Generate
       </button>
-      <button class="btn btn-danger" onclick="closeAIModal()">
+      <button type="button" class="btn btn-danger" onclick="closeAIModal()">
         Close
       </button>
     </div>

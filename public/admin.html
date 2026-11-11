@@ -1,185 +1,263 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Admin - Growble</title>
+  <meta name="theme-color" content="#0b1220"/>
+  <title>Admin Dashboard | Growble</title>
 
   <style>
-    body{
-      margin:0;
-      font-family:Arial;
-      background:linear-gradient(135deg,#0b1220,#0a2a43);
-      color:white;
-      padding:20px;
+    :root {
+      color-scheme: dark;
+      font-family: Inter, Arial, sans-serif;
+      background: #0b1220;
+      color: #eef5fc;
     }
 
-    .container{max-width:1200px;margin:auto;}
+    * { box-sizing: border-box; }
 
-    .topbar{
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      margin-bottom:20px;
+    body {
+      margin: 0;
+      min-height: 100vh;
+      padding: 24px;
+      background: radial-gradient(ellipse at top right, #0a2a43, #0b1220 60%);
     }
 
-    .brand{
-      font-size:24px;
-      font-weight:900;
-      color:#00d4ff;
+    button, input, select { font: inherit; }
+    .container { max-width: 1440px; margin: auto; }
+    .topbar, .section-heading, .filters, .pagination {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
     }
-
-    .btn{
-      padding:8px 14px;
-      border-radius:10px;
-      border:none;
-      cursor:pointer;
-      font-weight:700;
+    .topbar { flex-wrap: wrap; margin-bottom: 24px; }
+    .brand { color: #00d4ff; font-size: 24px; font-weight: 900; }
+    .header-links { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+    a { color: #8beaff; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .btn, .filter-control, .pagination button {
+      border: 1px solid rgba(255,255,255,.14);
+      border-radius: 10px;
+      padding: 9px 12px;
+      color: #eaf5ff;
+      background: rgba(255,255,255,.07);
     }
+    .btn { cursor: pointer; font-weight: 700; }
+    .btn:hover, .pagination button:hover { border-color: #00d4ff; }
+    .btn-danger { color: #ffd1d1; border-color: rgba(255,90,90,.35); }
+    .btn-suspend { color: #ffd1d1; }
+    .btn-activate { color: #b8ffd4; }
 
-    .btn-danger{
-      background:#ff4b4b;
-      color:white;
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(175px, 1fr));
+      gap: 14px;
+      margin-bottom: 18px;
     }
-
-    .grid{
-      display:grid;
-      grid-template-columns:repeat(4,1fr);
-      gap:15px;
-      margin-bottom:25px;
+    .card {
+      min-width: 0;
+      padding: 18px;
+      border: 1px solid rgba(255,255,255,.1);
+      border-radius: 16px;
+      background: rgba(255,255,255,.055);
+      box-shadow: 0 12px 32px rgba(0,0,0,.16);
     }
+    .metric-label { margin: 0 0 8px; color: #a9bacb; font-size: 13px; }
+    .metric-value { margin: 0; color: #00d4ff; font-size: 28px; font-weight: 800; }
+    .section-heading { flex-wrap: wrap; margin-bottom: 12px; }
+    .section-heading h2, .charts-card h2 { margin: 0; font-size: 18px; }
+    .subtle { color: #9aabbd; font-size: 12px; }
 
-    .card{
-      background:rgba(255,255,255,0.06);
-      padding:15px;
-      border-radius:15px;
-      border:1px solid rgba(255,255,255,0.1);
+    .charts {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+      margin-bottom: 18px;
     }
+    .chart-wrap { position: relative; height: 245px; margin-top: 16px; }
 
-    .card h3{
-      margin:0 0 5px;
-      font-size:22px;
-      color:#00d4ff;
+    .filters { justify-content: flex-start; flex-wrap: wrap; margin-bottom: 14px; }
+    .filter-control { min-height: 40px; }
+    .searchBox { width: min(320px, 100%); }
+    .table-wrap { width: 100%; overflow-x: auto; }
+    table { width: 100%; min-width: 920px; border-collapse: collapse; }
+    th, td {
+      padding: 12px 10px;
+      border-bottom: 1px solid rgba(255,255,255,.08);
+      text-align: left;
+      vertical-align: middle;
+      font-size: 13px;
     }
-
-    table{
-      width:100%;
-      border-collapse:collapse;
-      margin-top:15px;
+    th { color: #9feeff; background: rgba(0,212,255,.07); white-space: nowrap; }
+    td .subtle { display: block; margin-top: 4px; }
+    .badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: rgba(0,212,255,.12);
+      color: #a5efff;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: capitalize;
+      white-space: nowrap;
     }
-
-    th,td{
-      padding:10px;
-      border-bottom:1px solid rgba(255,255,255,0.1);
-      font-size:14px;
+    .badge.active { color: #b8ffd4; background: rgba(31,157,85,.2); }
+    .badge.suspended { color: #ffd1d1; background: rgba(220,65,65,.2); }
+    .badge.connected { color: #b8ffd4; }
+    .badge.not-connected { color: #c1ccda; background: rgba(255,255,255,.08); }
+    .pagination { justify-content: flex-end; margin-top: 14px; }
+    .pagination button { cursor: pointer; }
+    .pagination button:disabled { cursor: default; opacity: .45; }
+    .error-message {
+      display: none;
+      margin: 0 0 16px;
+      padding: 12px 14px;
+      border: 1px solid rgba(255,90,90,.35);
+      border-radius: 10px;
+      background: rgba(150,30,30,.18);
+      color: #ffd1d1;
     }
+    .empty-state { padding: 24px; color: #a9bacb; text-align: center; }
 
-    th{
-      text-align:left;
-      background:rgba(0,212,255,0.1);
+    @media (max-width: 920px) {
+      body { padding: 16px; }
+      .charts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .charts-card:last-child { grid-column: 1 / -1; }
     }
-
-    .badge{
-      padding:4px 8px;
-      border-radius:20px;
-      font-size:12px;
-      font-weight:700;
-    }
-
-    .active{background:#1f9d55;}
-    .suspended{background:#a52a2a;}
-
-    .searchBox{
-      padding:8px;
-      border-radius:8px;
-      border:none;
-      width:200px;
-    }
-
-    .pagination{
-      margin-top:10px;
-    }
-
-    .pagination button{
-      margin-right:5px;
-      padding:6px 10px;
+    @media (max-width: 600px) {
+      body { padding: 12px; }
+      .charts { grid-template-columns: 1fr; }
+      .charts-card:last-child { grid-column: auto; }
+      .chart-wrap { height: 220px; }
+      .header-links { width: 100%; }
+      .section-heading { align-items: flex-start; }
     }
   </style>
 </head>
 
 <body>
-<div class="container">
-
-  <div class="topbar">
-    <div class="brand">Growble Admin</div>
-    <button class="btn btn-danger" id="logoutBtn">Logout</button>
-  </div>
-
-  <!-- STATS -->
-  <div class="grid">
-    <div class="card">
-      <h3 id="totalUsers">0</h3>
-      <p>Total Users</p>
-    </div>
-    <div class="card">
-      <h3 id="activeUsers">0</h3>
-      <p>Active (7 days)</p>
-    </div>
-    <div class="card">
-      <h3 id="totalLeads">0</h3>
-      <p>Total Leads</p>
-    </div>
-    <div class="card">
-      <h3 id="totalAutomations">0</h3>
-      <p>Total Automations</p>
-    </div>
-  </div>
-
-  <!-- ANALYTICS CHARTS -->
-<div class="card" style="margin-bottom:20px;">
-  <h2 style="margin-bottom:15px;">Analytics Overview</h2>
-
-  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;">
+<main class="container">
+  <header class="topbar">
     <div>
-      <canvas id="planChart"></canvas>
+      <div class="brand">Growble Admin</div>
+      <div class="subtle">Business overview · plans · leads · WhatsApp · AI usage</div>
     </div>
-    <div>
-      <canvas id="leadChart"></canvas>
-    </div>
-    <div>
-      <canvas id="growthChart"></canvas>
-    </div>
-  </div>
-</div>
-<!-- USERS TABLE -->
-  <div class="card">
-    <div style="display:flex;justify-content:space-between;align-items:center;">
-      <h2>Users</h2>
-      <input class="searchBox" id="searchInput" placeholder="Search user..." />
+    <nav class="header-links" aria-label="Admin links">
+      <a href="/landing.html" target="_blank" rel="noopener">Public site</a>
+      <a href="/pricing.html" target="_blank" rel="noopener">Plans</a>
+      <button type="button" class="btn btn-danger" id="logoutBtn">Logout</button>
+    </nav>
+  </header>
+
+  <div id="adminError" class="error-message" role="alert"></div>
+
+  <section class="metrics" aria-label="Growble metrics">
+    <article class="card">
+      <p class="metric-label">Customer accounts</p>
+      <p class="metric-value" id="totalUsers">—</p>
+    </article>
+    <article class="card">
+      <p class="metric-label">Logged in (last 7 days)</p>
+      <p class="metric-value" id="activeUsers">—</p>
+    </article>
+    <article class="card">
+      <p class="metric-label">Leads managed</p>
+      <p class="metric-value" id="totalLeads">—</p>
+    </article>
+    <article class="card">
+      <p class="metric-label">WhatsApp connected</p>
+      <p class="metric-value" id="connectedUsers">—</p>
+    </article>
+    <article class="card">
+      <p class="metric-label">AI business profiles configured</p>
+      <p class="metric-value" id="aiConfigured">—</p>
+    </article>
+    <article class="card">
+      <p class="metric-label">AI replies used this month</p>
+      <p class="metric-value" id="aiRepliesUsed">—</p>
+    </article>
+    <article class="card">
+      <p class="metric-label">Follow-ups used this month</p>
+      <p class="metric-value" id="followUpsUsed">—</p>
+    </article>
+  </section>
+
+  <section class="charts" aria-label="Analytics overview">
+    <article class="card charts-card">
+      <h2>Customers by plan</h2>
+      <div class="chart-wrap"><canvas id="planChart"></canvas></div>
+    </article>
+    <article class="card charts-card">
+      <h2>Lead pipeline</h2>
+      <div class="chart-wrap"><canvas id="leadChart"></canvas></div>
+    </article>
+    <article class="card charts-card">
+      <h2>Monthly feature usage</h2>
+      <div class="chart-wrap"><canvas id="usageChart"></canvas></div>
+    </article>
+  </section>
+
+  <section class="card" aria-labelledby="usersTitle">
+    <div class="section-heading">
+      <div>
+        <h2 id="usersTitle">Customer accounts</h2>
+        <div class="subtle" id="userCount">Loading accounts…</div>
+      </div>
+      <button type="button" class="btn" id="refreshBtn">Refresh</button>
     </div>
 
-    <table>
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Email</th>
-          <th>Plan</th>
-          <th>Status</th>
-          <th>Action</th>
-        </tr>
-      </thead>
-      <tbody id="usersBody"></tbody>
-    </table>
+    <div class="filters">
+      <input class="filter-control searchBox" id="searchInput" type="search"
+        placeholder="Search name, email or business…" aria-label="Search customers"/>
+      <select class="filter-control" id="planFilter" aria-label="Filter by plan">
+        <option value="">All plans</option>
+        <option value="free">Free</option>
+        <option value="starter">Starter</option>
+        <option value="pro">Pro</option>
+        <option value="agent">Agent</option>
+      </select>
+      <select class="filter-control" id="statusFilter" aria-label="Filter by account status">
+        <option value="">All account statuses</option>
+        <option value="active">Active</option>
+        <option value="suspended">Suspended</option>
+      </select>
+    </div>
 
-    <div class="pagination" id="pagination"></div>
-  </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Customer / business</th>
+            <th>Plan / expiry</th>
+            <th>AI replies</th>
+            <th>Follow-ups</th>
+            <th>WhatsApp</th>
+            <th>AI setup</th>
+            <th>Status</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="usersBody">
+          <tr><td class="empty-state" colspan="8">Loading customer accounts…</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="pagination">
+      <span class="subtle" id="pageLabel"></span>
+      <div>
+        <button type="button" id="previousPage" disabled>Previous</button>
+        <button type="button" id="nextPage" disabled>Next</button>
+      </div>
+    </div>
+  </section>
+</main>
 
-</div>
 <script>
   const token = localStorage.getItem("token");
   const role = localStorage.getItem("role");
-
   if (!token || role !== "admin") {
+    localStorage.clear();
     window.location.href = "/login.html";
   }
 </script>

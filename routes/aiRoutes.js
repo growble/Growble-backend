@@ -4,10 +4,6 @@ const auth = require("../middleware/authMiddleware");
 
 const OpenAI = require("openai");
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
-});
-
 const checkPlan =
 require("../middleware/checkPlan");
 const {
@@ -23,10 +19,25 @@ router.post(
   async (req, res) => {
 
   try {
-    const { prompt } = req.body;
+    const prompt = typeof req.body?.prompt === "string"
+      ? req.body.prompt.trim()
+      : "";
 
     if (!prompt) {
       return res.status(400).json({ message: "Prompt required" });
+    }
+
+    if (prompt.length > 1000) {
+      return res.status(400).json({
+        message: "Please keep the prompt under 1,000 characters."
+      });
+    }
+
+    const apiKey = process.env.OPENAI_API_KEY;
+    if (!apiKey) {
+      return res.status(503).json({
+        message: "AI message generation is not configured. Please contact support."
+      });
     }
 
     const usageReset = resetMonthlyUsage(req.user);
@@ -43,22 +54,24 @@ router.post(
       });
     }
 
+    const openai = new OpenAI({ apiKey });
     const response = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
+      model: process.env.OPENAI_MODEL || "gpt-4o-mini",
       messages: [
         {
           role: "system",
           content: `
-You are a sales assistant for coaching institutes.
+You write concise WhatsApp follow-up messages for businesses of any type.
 
-Write a short WhatsApp follow-up message.
+Create one natural message based on the user's situation. Keep the business's
+industry and the customer's context in mind. Do not invent prices, offers, or
+business details that were not provided.
 
 Rules:
-- Friendly tone
-- Max 2-3 lines
-- Include urgency if possible
-- Use simple English
-- Add emoji sometimes
+- Be friendly, professional, and concise.
+- Keep it to 2-3 short lines in simple language.
+- Do not add artificial urgency.
+- Use an emoji only when it fits naturally.
           `
         },
         {
@@ -68,7 +81,12 @@ Rules:
       ]
     });
 
-    const message = response.choices[0].message.content;
+    const message = response.choices?.[0]?.message?.content?.trim();
+    if (!message) {
+      return res.status(502).json({
+        message: "AI could not produce a message. Please try again."
+      });
+    }
 
     if (req.user.role !== "admin") {
       await recordPlanUsage(req.user, "aiReplies");
@@ -77,8 +95,14 @@ Rules:
     res.json({ message });
 
   } catch (err) {
-    console.error("AI error:", err);
-    res.status(500).json({ message: "AI failed" });
+    console.error("AI generation error:", {
+      status: err.status,
+      code: err.code,
+      message: err.message
+    });
+    res.status(502).json({
+      message: "The AI service is temporarily unavailable. Please try again."
+    });
   }
 });
 
