@@ -14,12 +14,49 @@ const {
   recordPlanUsage,
   resetMonthlyUsage
 } = require("../utils/planUsage");
-function calculateLeadAI(lead){
+function calculateLeadAI(lead) {
+  let score = 50;
 
-let score = 50;
+  if (lead.status === "interested") score += 30;
+  if (lead.status === "contacted") score += 15;
+  if (lead.status === "closed") score = 100;
+  if (lead.status === "lost") score = 5;
 
-if(lead.status === "interested"){
-score += 30;
+  if (lead.notes) {
+    const text = lead.notes.toLowerCase();
+    if (text.includes("fees") || text.includes("price")) score += 10;
+    if (text.includes("demo")) score += 15;
+    if (text.includes("not interested")) score -= 25;
+  }
+
+  const overdue =
+    lead.nextFollowUpAt &&
+    new Date(lead.nextFollowUpAt) < new Date();
+  if (overdue) score -= 15;
+
+  score = Math.max(0, Math.min(100, score));
+
+  let temperature = "cold";
+  if (score >= 80) {
+    temperature = "hot";
+  } else if (score >= 55) {
+    temperature = "warm";
+  }
+
+  let nextAction = "Follow up in 2 days";
+  if (score >= 80) {
+    nextAction = "Call immediately";
+  } else if (overdue) {
+    nextAction = "Send WhatsApp today";
+  }
+
+  return {
+    aiScore: score,
+    aiLeadTemperature: temperature,
+    aiSentiment: score >= 70 ? "positive" : score >= 40 ? "neutral" : "negative",
+    aiSummary: `Lead ${lead.status}.\nCurrent score ${score}.`,
+    aiNextAction: nextAction
+  };
 }
 
 async function qualifyLead(lead, workspaceOwner) {
@@ -51,104 +88,6 @@ function presentLead(lead, plan) {
     delete result.aiNextAction;
   }
   return result;
-}
-
-if(lead.status === "contacted"){
-score += 15;
-}
-
-if(lead.status === "closed"){
-score = 100;
-}
-
-if(lead.status === "lost"){
-score = 5;
-}
-
-if(lead.notes){
-
-const text = lead.notes.toLowerCase();
-
-if(
-text.includes("fees") ||
-text.includes("price")
-){
-score += 10;
-}
-
-if(
-text.includes("demo")
-){
-score += 15;
-}
-
-if(
-text.includes("not interested")
-){
-score -= 25;
-}
-
-}
-
-const overdue =
-lead.nextFollowUpAt &&
-new Date(lead.nextFollowUpAt)
-< new Date();
-
-if(overdue){
-score -= 15;
-}
-
-score =
-Math.max(
-0,
-Math.min(100,score)
-);
-
-let temperature = "cold";
-
-if(score >= 80){
-temperature = "hot";
-}
-else if(score >= 55){
-temperature = "warm";
-}
-
-let nextAction =
-"Follow up in 2 days";
-
-if(score >= 80){
-nextAction =
-"Call immediately";
-}
-else if(overdue){
-nextAction =
-"Send WhatsApp today";
-}
-
-return {
-
-aiScore:score,
-
-aiLeadTemperature:
-temperature,
-
-aiSentiment:
-score >= 70
-? "positive"
-: score >= 40
-? "neutral"
-: "negative",
-
-aiSummary:
-`Lead ${lead.status}.
-Current score ${score}.`,
-
-aiNextAction:
-nextAction
-
-};
-
 }
 
 /**
