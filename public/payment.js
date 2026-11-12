@@ -29,6 +29,9 @@ document.addEventListener("DOMContentLoaded", () => {
   const payBtn = document.getElementById("payBtn");
 
   payBtn.addEventListener("click", async () => {
+    payBtn.disabled = true;
+    const originalButtonText = payBtn.textContent;
+    payBtn.textContent = "Connecting to payment...";
     try {
       const res = await fetch("/api/payment/create-order", {
         method: "POST",
@@ -47,11 +50,10 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
-      const data = await res.json();
-      console.log("create order response:", data);
+      const data = await res.json().catch(() => ({}));
 
       if (!res.ok || !data.orderId || !data.keyId) {
-        alert(data.error || "order creation failed");
+        alert(data.error || "Could not start checkout. Please try again or contact support.");
         return;
       }
 
@@ -124,12 +126,20 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       };
 
+      if (typeof Razorpay !== "function") {
+        alert("The payment window could not load. Check your connection and try again.");
+        return;
+      }
+
       const rzp = new Razorpay(options);
       rzp.open();
 
     } catch (err) {
       console.error(err);
-      alert("something went wrong");
+      alert("Could not start checkout. Please try again shortly.");
+    } finally {
+      payBtn.disabled = false;
+      payBtn.textContent = originalButtonText;
     }
   });
 });
