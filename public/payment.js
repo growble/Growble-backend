@@ -102,7 +102,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
               if (planData?.user?.plan === planId) {
                 alert(`${plan.name} activated 🎉`);
-                window.location.href = "/dashboard.html";
+                window.location.href = "/index.html";
                 return true;
               }
 
