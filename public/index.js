@@ -429,6 +429,11 @@ if (data.planExpiringSoon) {
     const name = data?.user?.name || "User";
     const email = data?.user?.email || "";
     const plan = data?.user?.plan || "free";
+    const workspace = data?.workspace || {};
+    const teamBtn = document.getElementById("teamBtn");
+    if (teamBtn) {
+      teamBtn.hidden = !workspace.isOwner && !data.user.workspaceOwner;
+    }
 const businessName =
 data?.user?.businessName || "";
 
@@ -522,6 +527,7 @@ if (upgradeContainer) {
 <b>${escapeHtml(name)}</b> • ${escapeHtml(email)}
 <br>
 Plan: <b style="color:#00d4ff">${escapeHtml(plan)}</b>
+${workspace.isOwner ? `<br>Workspace seats: ${workspace.memberCount}/${Number.isFinite(workspace.seatLimit) ? workspace.seatLimit : "Unlimited"}` : `<br>Workspace owner: ${escapeHtml(workspace.ownerName || "")}`}
 
 <br>
 
@@ -534,8 +540,8 @@ ${usage.aiRepliesUsed || 0}/${usage.aiRepliesLimit || 0}
 
 <br>
 
-🎯 AI Qualification:
-${usage.aiQualificationUsed || 0}/${usage.aiQualificationLimit || 0}
+${usage.aiQualificationLimit ? `🎯 AI Qualification:
+${usage.aiQualificationUsed || 0}/${usage.aiQualificationLimit}<br>` : ""}
 
 <br>
 
@@ -548,7 +554,7 @@ ${usage.followUpsUsed || 0}/${usage.followUpsLimit || 0}
 
 if (quickActionsBox) {
   const canUseAiReplies = ["starter", "pro", "agent"].includes(plan);
-  const canSendFollowups = ["pro", "agent"].includes(plan);
+  const canSendFollowups = ["starter", "pro", "agent"].includes(plan);
   const actions = [];
 
   if (canSendFollowups) {
@@ -581,7 +587,7 @@ if (quickActionsBox) {
       <button class="btn btn-outline"
         style="width:100%;margin-top:10px"
         onclick="window.location.href='/pricing.html'">
-        Unlock Pro follow-up automation
+        Unlock paid-plan follow-up automation
       </button>
     `);
   }
@@ -892,23 +898,12 @@ tr.className = followupRowClass(l.nextFollowUpAt);
               : l.notes)
           : ""
       )}
-<div
-style="
-margin-top:6px;
-font-size:12px;
-">
-
-🧠 ${l.aiLeadTemperature || "cold"}
-
-•
-
-🎯 ${l.aiScore || 0}/100
-
-<br>
-
-${l.aiNextAction || ""}
-
+${["pro", "agent"].includes(currentUserPlan) ? `
+<div style="margin-top:6px;font-size:12px;">
+  🧠 ${escapeHtml(l.aiLeadTemperature || "cold")} • 🎯 ${l.aiScore || 0}/100
+  <br>${escapeHtml(l.aiNextAction || "")}
 </div>
+` : ""}
     </span>
   </td>
   <td>${statusBadge(l.status)}</td>
@@ -925,8 +920,7 @@ ${l.aiNextAction || ""}
     </button>
 
     ${
-      currentUserPlan === "pro" ||
-      currentUserPlan === "agent"
+      ["starter", "pro", "agent"].includes(currentUserPlan)
       ? `
       <button type="button" class="btn btn-primary"
   onclick="event.stopPropagation(); sendWhatsApp('${l._id}')">
@@ -936,8 +930,8 @@ ${l.aiNextAction || ""}
       : `
       <button class="btn btn-outline"
         onclick="showToast({
-          title:'🔒 Pro Feature',
-          message:'WhatsApp messaging is available in Growble Pro.',
+          title:'🔒 Starter Feature',
+          message:'WhatsApp messaging is available on paid plans.',
           duration:4000
         })">
         WhatsApp 🔒
@@ -1107,6 +1101,73 @@ if (lead.conversation && lead.conversation.length > 0) {
   conversationBox.innerHTML = "<span class='small'>No WhatsApp messages recorded for this lead yet.</span>";
 }
 
+const humanTakeoverControls = document.getElementById("humanTakeoverControls");
+const humanTakeoverButton = document.getElementById("humanTakeoverButton");
+const humanReplyForm = document.getElementById("humanReplyForm");
+const humanReplyText = document.getElementById("humanReplyText");
+const canUseHumanTakeover =
+  currentUserPlan === "pro" || currentUserPlan === "agent";
+humanTakeoverControls.style.display = canUseHumanTakeover ? "block" : "none";
+humanTakeoverButton.textContent = lead.humanTakeover
+  ? "Resume AI replies"
+  : "Take over conversation";
+humanReplyForm.style.display = lead.humanTakeover ? "block" : "none";
+humanTakeoverButton.onclick = async () => {
+  try {
+    const res = await fetch(`/api/leads/${id}/human-takeover`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify({ enabled: !lead.humanTakeover })
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      throw new Error(data.message || "Could not update human takeover.");
+    }
+    await window.openEditLead(id);
+  } catch (error) {
+    showToast({
+      title: "❌ Could not update takeover",
+      message: error.message,
+      duration: 4000
+    });
+  }
+};
+document.getElementById("sendHumanReplyButton").onclick = async () => {
+  const message = humanReplyText.value.trim();
+  if (!message) return;
+
+  try {
+    const res = await fetch(`/api/leads/${id}/send-whatsapp`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify({ message })
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      throw new Error(data.message || "Could not send the manual reply.");
+    }
+    humanReplyText.value = "";
+    await window.openEditLead(id);
+    showToast({
+      title: "✅ Reply sent",
+      message: "Your manual WhatsApp reply was sent.",
+      duration: 3500
+    });
+  } catch (error) {
+    showToast({
+      title: "❌ Reply failed",
+      message: error.message,
+      duration: 4000
+    });
+  }
+};
+
 // Render activity log (PRO only)
 const logBox = document.getElementById("activityLogBox");
 const activitySection = document.getElementById("activitySection");
@@ -1250,13 +1311,10 @@ window.deleteLead = function deleteLead(id) {
 };
 window.openTemplateEditor = async function () {
 
-  if (
-  currentUserPlan !== "pro" &&
-  currentUserPlan !== "agent"
-) {
+  if (!["starter", "pro", "agent"].includes(currentUserPlan)) {
     showToast({
-      title: "🔒 Pro Feature",
-      message: "WhatsApp templates are available in Growble Pro.",
+      title: "🔒 Starter Feature",
+      message: "WhatsApp templates are available on paid plans.",
       duration: 4000
     });
     return;

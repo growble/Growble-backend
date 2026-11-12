@@ -6,6 +6,7 @@ const OpenAI = require("openai");
 
 const checkPlan =
 require("../middleware/checkPlan");
+const getWorkspaceKnowledge = require("../utils/workspaceKnowledge");
 const {
   hasRemainingUsage,
   recordPlanUsage,
@@ -19,6 +20,7 @@ router.post(
   async (req, res) => {
 
   try {
+    const workspaceOwner = req.workspaceOwner;
     const prompt = typeof req.body?.prompt === "string"
       ? req.body.prompt.trim()
       : "";
@@ -40,14 +42,14 @@ router.post(
       });
     }
 
-    const usageReset = resetMonthlyUsage(req.user);
+    const usageReset = resetMonthlyUsage(workspaceOwner);
     if (usageReset) {
-      await req.user.save();
+      await workspaceOwner.save();
     }
 
     if (
-      req.user.role !== "admin" &&
-      !hasRemainingUsage(req.user, "aiReplies")
+      workspaceOwner.role !== "admin" &&
+      !hasRemainingUsage(workspaceOwner, "aiReplies")
     ) {
       return res.status(429).json({
         message: "AI reply limit reached. Upgrade your plan."
@@ -76,7 +78,7 @@ Rules:
         },
         {
           role: "user",
-          content: prompt
+          content: `Business knowledge:\n${await getWorkspaceKnowledge(workspaceOwner, prompt) || "No saved knowledge."}\n\nCustomer or business situation:\n${prompt}`
         }
       ]
     });
@@ -88,8 +90,8 @@ Rules:
       });
     }
 
-    if (req.user.role !== "admin") {
-      await recordPlanUsage(req.user, "aiReplies");
+    if (workspaceOwner.role !== "admin") {
+      await recordPlanUsage(workspaceOwner, "aiReplies");
     }
 
     res.json({ message });

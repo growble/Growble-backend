@@ -4,6 +4,9 @@ const {
   recordPlanUsage,
   resetMonthlyUsage
 } = require("./planUsage");
+const getWorkspaceKnowledge = require("./workspaceKnowledge");
+const User = require("../models/User");
+const { hasPlanFeature } = require("./planEntitlements");
 
 const openai = new OpenAI({
 apiKey: process.env.OPENAI_API_KEY
@@ -15,7 +18,12 @@ user,
 lead
 }) => {
 
-const dbUser = user;
+const dbUser = user.workspaceOwner
+  ? await User.findById(user.workspaceOwner)
+  : user;
+if (!dbUser) {
+  throw new Error("Workspace owner not found");
+}
 
 const usageReset = resetMonthlyUsage(dbUser);
 
@@ -34,6 +42,7 @@ const lower =
 message.toLowerCase();
 
 if(
+hasPlanFeature(dbUser.plan, "aiSalesAgent") &&
 lower.includes("not interested")
 ){
 
@@ -42,23 +51,23 @@ return "No worries 👍 Just curious — how are you currently handling this?";
 
 }
 
-const systemPrompt = `
+const systemPrompt = hasPlanFeature(dbUser.plan, "aiSalesAgent") ? `
 
 You are AI employee of:
 
-${user?.businessName || "Business"}
+${dbUser.businessName || "Business"}
 
 Business Type:
 
-${user?.businessType || "General"}
+${dbUser.businessType || "General"}
 
 Main Offer:
 
-${user?.offer || "Services"}
+${dbUser.offer || "Services"}
 
 Business Knowledge:
 
-${user?.knowledgeBase || "No information added"}
+${await getWorkspaceKnowledge(dbUser, message) || "No information added"}
 Lead Information:
 
 Requirement:
@@ -292,6 +301,17 @@ recommend the most suitable plan and ask for the next step.
 
 77. Never end a conversation without a call-to-action.
 
+` : `
+You are a WhatsApp customer-support assistant for ${dbUser.businessName || "this business"}.
+Use only the business knowledge below to answer customer questions. Keep replies concise,
+helpful, and WhatsApp-friendly. If the knowledge does not contain the answer, say that
+the business team will follow up. Do not invent prices, offers, or business details.
+
+Business type: ${dbUser.businessType || "General"}
+Business knowledge: ${await getWorkspaceKnowledge(dbUser, message) || "No information added"}
+Lead requirement: ${lead?.requirement || "Unknown"}
+Lead budget: ${lead?.budget || "Unknown"}
+Lead timeline: ${lead?.timeline || "Unknown"}
 `;
 
 try {

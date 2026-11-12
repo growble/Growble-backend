@@ -12,7 +12,7 @@ const router = express.Router();
  */
 router.get("/", authMiddleware, async (req, res) => {
   try {
-    const user = req.user;
+    const user = req.workspaceOwner;
     const usageReset = resetMonthlyUsage(user);
 
     if (usageReset) {

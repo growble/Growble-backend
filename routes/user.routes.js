@@ -3,24 +3,54 @@ const router = express.Router();
 const auth = require("../middleware/authMiddleware");
 const User = require("../models/User");
 const { resetMonthlyUsage } = require("../utils/planUsage");
+const { getPlanLimits, hasPlanFeature } = require("../utils/planEntitlements");
 
 router.get("/me", auth, async (req, res) => {
   try {
     const user = req.user;
-
-    const PLAN_LIMITS = require("../config/PlanLimits");
-    const limits = PLAN_LIMITS[user.plan] || PLAN_LIMITS.free;
-    const usageReset = resetMonthlyUsage(user);
+    const workspaceOwner = req.workspaceOwner;
+    const limits = getPlanLimits(workspaceOwner.plan);
+    const usageReset = resetMonthlyUsage(workspaceOwner);
 
     if (usageReset) {
-      await user.save();
+      await workspaceOwner.save();
     }
 
-    const usage = user.automationUsage.usage;
+    const usage = workspaceOwner.automationUsage.usage;
+    const memberCount = await User.countDocuments({
+      $or: [
+        { _id: workspaceOwner._id },
+        { workspaceOwner: workspaceOwner._id }
+      ]
+    });
+    const safeUser = {
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      workspaceOwner: user.workspaceOwner || null,
+      plan: workspaceOwner.plan,
+      planExpiresAt: workspaceOwner.planExpiresAt,
+      businessName: workspaceOwner.businessName,
+      businessType: workspaceOwner.businessType,
+      offer: workspaceOwner.offer,
+      tone: workspaceOwner.tone,
+      services: workspaceOwner.services,
+      faq: workspaceOwner.faq,
+      knowledgeBase: workspaceOwner.knowledgeBase,
+      aiSetupCompleted: workspaceOwner.aiSetupCompleted,
+      whatsapp: { connected: Boolean(workspaceOwner.whatsapp?.connected) }
+    };
 
     res.json({
       success: true,
-      user,
+      user: safeUser,
+      workspace: {
+        ownerName: workspaceOwner.name,
+        isOwner: String(user._id) === String(workspaceOwner._id),
+        memberCount,
+        seatLimit: limits.teamMembers
+      },
       planExpired: req.planExpired || false,
       planExpiringSoon: req.planExpiringSoon || null,
       usage: {
@@ -63,10 +93,7 @@ extra
 
 } = req.body;
 
-    const user =
-await User.findById(
-req.user._id
-);
+    const user = req.workspaceOwner;
 
     if (!user) return res.status(404).json({ message: "User not found" });
 
@@ -133,70 +160,36 @@ user.aiSetupCompleted = true;
 });
 router.post(
 "/connect-whatsapp",
-async(req,res)=>{
+auth,
+async (req, res) => {
+  if (!hasPlanFeature(req.workspaceOwner.plan, "whatsapp")) {
+    return res.status(403).json({
+      message: "WhatsApp integration is available on paid plans."
+    });
+  }
 
-try{
+  const { whatsappPhoneId, whatsappToken, verifyToken } = req.body || {};
+  if (
+    typeof whatsappPhoneId !== "string" ||
+    !whatsappPhoneId.trim() ||
+    typeof whatsappToken !== "string" ||
+    whatsappToken.length < 20 ||
+    typeof verifyToken !== "string" ||
+    !verifyToken.trim()
+  ) {
+    return res.status(400).json({ message: "WhatsApp connection details are invalid." });
+  }
 
-const {
-
-userId,
-
-whatsappPhoneId,
-
-whatsappToken,
-
-verifyToken
-
-}=req.body;
-
-const user=
-await User.findById(
-userId
-);
-
-if(!user){
-
-return res
-.status(404)
-.json({
-message:
-"User not found"
-});
-
-}
-
-user.whatsappPhoneId=
-whatsappPhoneId;
-
-user.whatsappToken=
-whatsappToken;
-
-user.verifyToken=
-verifyToken;
-
-await user.save();
-
-res.json({
-
-message:
-"WhatsApp Connected 🚀"
-
-});
-
-}catch(err){
-
-console.log(err);
-
-res
-.status(500)
-.json({
-
-message:
-"Server Error"
-
-});
-
-}
-
+  try {
+    req.workspaceOwner.whatsapp.phoneNumberId = whatsappPhoneId.trim();
+    req.workspaceOwner.whatsapp.accessToken = whatsappToken;
+    req.workspaceOwner.whatsapp.verifyToken = verifyToken.trim();
+    req.workspaceOwner.whatsapp.connected = true;
+    await req.workspaceOwner.save();
+    res.json({ message: "WhatsApp connected." });
+  } catch (error) {
+    console.error("Save WhatsApp connection error:", error);
+    res.status(500).json({ message: "Could not save WhatsApp connection." });
+  }
 });
 module.exports = router;

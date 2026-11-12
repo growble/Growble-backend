@@ -1,9 +1,28 @@
 document.addEventListener("DOMContentLoaded", () => {
+  const plans = {
+    starter: { name: "Starter", price: 499 },
+    pro: { name: "Pro AI", price: 999 },
+    agent: { name: "AI Sales Agent", price: 1499 }
+  };
+  const planId = new URLSearchParams(window.location.search).get("plan") || "pro";
+  const plan = Object.prototype.hasOwnProperty.call(plans, planId)
+    ? plans[planId]
+    : null;
+
+  if (!plan) {
+    window.location.replace("/pricing.html");
+    return;
+  }
+
+  document.getElementById("planName").textContent = plan.name;
+  document.getElementById("planPrice").innerHTML =
+    `₹${plan.price} <span style="font-size:16px">/month</span>`;
+
   const token = localStorage.getItem("token");
 
   if (!token) {
     alert("please login first");
-    window.location.href = "/login.html";
+    window.location.href = `/login.html?plan=${encodeURIComponent(planId)}`;
     return;
   }
 
@@ -13,6 +32,7 @@ document.addEventListener("DOMContentLoaded", () => {
     try {
       const res = await fetch("/api/payment/create-order", {
         method: "POST",
+        body: JSON.stringify({ plan: planId }),
         headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${token}`
@@ -23,25 +43,25 @@ document.addEventListener("DOMContentLoaded", () => {
       if (res.status === 401) {
         alert("session expired. please login again");
         localStorage.removeItem("token");
-        window.location.href = "/login.html";
+        window.location.href = `/login.html?plan=${encodeURIComponent(planId)}`;
         return;
       }
 
       const data = await res.json();
       console.log("create order response:", data);
 
-      if (!data.orderId) {
-        alert("order creation failed");
+      if (!res.ok || !data.orderId || !data.keyId) {
+        alert(data.error || "order creation failed");
         return;
       }
 
       const options = {
-        key: "rzp_live_S5ENHkfaDlx45Q", // ✅ (we will improve this later)
+        key: data.keyId,
         amount: data.amount,
         currency: "INR",
         order_id: data.orderId,
         name: "Growble",
-        description: "Pro Plan",
+        description: `${plan.name} Plan - ₹${plan.price}/month`,
 
         handler: async function (response) {
           try {
@@ -78,8 +98,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
               const planData = await planRes.json();
 
-              if (planData?.user?.plan === "pro") {
-                alert("pro activated 🎉");
+              if (planData?.user?.plan === planId) {
+                alert(`${plan.name} activated 🎉`);
                 window.location.href = "/dashboard.html";
                 return true;
               }

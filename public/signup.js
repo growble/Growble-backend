@@ -1,3 +1,25 @@
+const requestedPlan = new URLSearchParams(window.location.search).get("plan");
+const inviteToken = new URLSearchParams(window.location.search).get("invite");
+const selectedPlan = ["free", "starter", "pro", "agent"].includes(requestedPlan)
+  ? requestedPlan
+  : "free";
+const planLabels = {
+  free: "the Free plan",
+  starter: "Starter at ₹499/month",
+  pro: "Pro AI at ₹999/month",
+  agent: "AI Sales Agent at ₹1,499/month"
+};
+const signupSub = document.getElementById("signupSub");
+if (signupSub && selectedPlan !== "free") {
+  signupSub.textContent = `Create your account to continue with ${planLabels[selectedPlan]}.`;
+}
+const loginLink = document.getElementById("loginLink");
+if (loginLink) {
+  loginLink.href = inviteToken
+    ? `/login.html?invite=${encodeURIComponent(inviteToken)}`
+    : `/login.html?plan=${encodeURIComponent(selectedPlan)}`;
+}
+
 document.getElementById("signupBtn").addEventListener("click", async () => {
   const nameEl = document.getElementById("name");
   const emailEl = document.getElementById("email");
@@ -94,11 +116,18 @@ document.getElementById("signupBtn").addEventListener("click", async () => {
     // if backend sends token
     if(data.token){
       localStorage.setItem("token", data.token);
+      const redirectUrl = selectedPlan === "free"
+        ? "/index.html"
+        : `/payment.html?plan=${encodeURIComponent(selectedPlan)}`;
       showToast({
         type:"success",
         title:"Account Created 🎉",
-        msg:"Welcome to Growble!",
-        redirectUrl:"/dashboard.html"
+        msg:selectedPlan === "free"
+          ? "Welcome to Growble!"
+          : "Welcome! Continue to checkout after signing in.",
+        redirectUrl: inviteToken
+          ? `/team-invite.html?token=${encodeURIComponent(inviteToken)}`
+          : redirectUrl
       });
       return;
     }
@@ -107,8 +136,12 @@ document.getElementById("signupBtn").addEventListener("click", async () => {
     showToast({
       type:"success",
       title:"Signup Successful 🎉",
-      msg:"Please login to continue.",
-      redirectUrl:"/login.html"
+      msg:selectedPlan === "free"
+        ? "Please login to continue."
+        : "Please login to continue to checkout.",
+      redirectUrl: inviteToken
+        ? `/login.html?invite=${encodeURIComponent(inviteToken)}`
+        : `/login.html?plan=${encodeURIComponent(selectedPlan)}`
     });
 
   }catch(err){

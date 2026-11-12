@@ -37,6 +37,13 @@ const UserSchema = new mongoose.Schema(
       default: "user"
     },
 
+    workspaceOwner: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+      index: true
+    },
+
     plan: {
   type: String,
   enum: ["free", "starter", "pro", "agent"],

@@ -1,3 +1,15 @@
+const requestedPlan = new URLSearchParams(window.location.search).get("plan");
+const inviteToken = new URLSearchParams(window.location.search).get("invite");
+const selectedPlan = ["free", "starter", "pro", "agent"].includes(requestedPlan)
+  ? requestedPlan
+  : "free";
+const signupLink = document.getElementById("signupLink");
+if (signupLink) {
+  signupLink.href = inviteToken
+    ? `/signup.html?invite=${encodeURIComponent(inviteToken)}`
+    : `/signup.html?plan=${encodeURIComponent(selectedPlan)}`;
+}
+
 document.getElementById("loginBtn").addEventListener("click", async () => {
   const emailEl = document.getElementById("email");
   const passEl = document.getElementById("password");
@@ -103,6 +115,10 @@ let redirectUrl = "/index.html";
 
 if (data.user.role === "admin") {
   redirectUrl = "/admin.html";
+} else if (inviteToken) {
+  redirectUrl = `/team-invite.html?token=${encodeURIComponent(inviteToken)}`;
+} else if (selectedPlan !== "free") {
+  redirectUrl = `/payment.html?plan=${encodeURIComponent(selectedPlan)}`;
 }
 
 

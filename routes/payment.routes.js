@@ -3,6 +3,7 @@ const router = express.Router();
 const Razorpay = require("razorpay");
 const crypto = require("crypto");
 const auth = require("../middleware/authMiddleware");
+const PLAN_LIMITS = require("../config/PlanLimits");
 
 // 🔑 Razorpay initialization
 const razorpay = new Razorpay({
@@ -16,21 +17,19 @@ const razorpay = new Razorpay({
  */
 router.post("/create-order", auth, async (req, res) => {
   try {
+    if (String(req.user._id) !== String(req.workspaceOwner._id)) {
+      return res.status(403).json({ error: "Only the workspace owner can manage billing" });
+    }
+
     // 🔐 1. userId from auth middleware
     const userId = req.user.id;
 
     // 🔖 2. Plan & amount (backend controlled)
     const { plan } = req.body;
-    const PLAN_PRICES = {
-
- starter: 499,
- pro: 999,
- agent: 1499
-
-};
-
-const amount =
-PLAN_PRICES[plan];
+    if (!["starter", "pro", "agent"].includes(plan)) {
+      return res.status(400).json({ error: "Invalid plan" });
+    }
+    const amount = PLAN_LIMITS[plan].price;
 
     // 🧾 3. Create Razorpay order with NOTES
     const order = await razorpay.orders.create({
@@ -50,6 +49,7 @@ PLAN_PRICES[plan];
     res.json({
       orderId: order.id,
       amount: order.amount,
+      keyId: process.env.RAZORPAY_KEY_ID,
     });
   } catch (error) {
     console.error("Create order error:", error);

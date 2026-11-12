@@ -6,7 +6,8 @@ module.exports = (...allowedPlans) => {
       return next();
     }
 
-    if (!allowedPlans.includes(req.user.plan)) {
+    const plan = req.workspaceOwner?.plan || req.user.plan;
+    if (!allowedPlans.includes(plan)) {
       return res.status(403).json({
         success: false,
         message: "Upgrade your plan to access this feature."

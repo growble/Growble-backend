@@ -4,6 +4,7 @@ const User = require("../models/User");
 const followUps = require("../config/followUps");
 const sendWhatsAppMessage = require("../utils/whatsappSender");
 const planExpiryGuard = require("../services/planExpiryGuard");
+const { hasPlanFeature } = require("../utils/planEntitlements");
 const {
   hasRemainingUsage,
   recordPlanUsage,
@@ -26,11 +27,18 @@ cron.schedule("* * * * *", async () => {
       const nextTime = new Date(lastTime.getTime() + followUp.delay);
       if (now < nextTime) continue;
 
-      const user = await User.findById(lead.user);
+      const leadOwner = await User.findById(lead.workspaceOwner || lead.user);
+      const user = leadOwner;
       if (!user) continue;
 
       await planExpiryGuard(user);
       if (!user.isActive) continue;
+      if (
+        lead.humanTakeover &&
+        hasPlanFeature(user.plan, "advancedAnalytics")
+      ) {
+        continue;
+      }
 
       if (resetMonthlyUsage(user, now)) {
         await user.save();
@@ -46,7 +54,16 @@ cron.schedule("* * * * *", async () => {
         continue;
       }
 
-      const message = followUp.message.replace("{{name}}", lead.name);
+      let message = followUp.message.replace("{{name}}", lead.name);
+      if (hasPlanFeature(user.plan, "aiSalesAgent")) {
+        if (!hasRemainingUsage(user, "aiReplies")) continue;
+        const generateMessage = require("../utils/aiMessage");
+        message = await generateMessage({
+          message: `Write a short, context-aware WhatsApp follow-up to ${lead.name}. Use the conversation and lead details. Do not repeat previous messages or invent business facts. Ask one natural next-step question.`,
+          user,
+          lead
+        });
+      }
       const providerMessageId = await sendWhatsAppMessage({
         phone: lead.phone,
         message,

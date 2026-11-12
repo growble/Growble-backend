@@ -1,15 +1,14 @@
 const express = require("express");
 const router = express.Router();
 
-const User = require("../models/User");
 const Lead = require("../models/Lead");
 const auth = require("../middleware/authMiddleware");
-const { requireProPlan } = require("../middleware/planMiddleware");
 const handleLeadAutomation = require("../services/automationService");
-const checkAutomationUsage = require("../middleware/automationUsageMiddleware");
 const sendWhatsAppMessage = require("../utils/whatsappSender");
 const generateMessage = require("../utils/aiMessage");
 const PLAN_LIMITS = require("../config/PlanLimits");
+const { hasPlanFeature } = require("../utils/planEntitlements");
+const { getWorkspaceLeadQuery, getWorkspaceOwnerId } = require("../utils/workspace");
 const {
   hasRemainingUsage,
   recordPlanUsage,
@@ -21,6 +20,37 @@ let score = 50;
 
 if(lead.status === "interested"){
 score += 30;
+}
+
+async function qualifyLead(lead, workspaceOwner) {
+  if (resetMonthlyUsage(workspaceOwner)) {
+    await workspaceOwner.save();
+  }
+  if (
+    !hasPlanFeature(workspaceOwner.plan, "aiLeadQualification") ||
+    !hasRemainingUsage(workspaceOwner, "aiQualification")
+  ) {
+    return false;
+  }
+
+  Object.assign(lead, calculateLeadAI(lead));
+  await recordPlanUsage(workspaceOwner, "aiQualification");
+  return true;
+}
+
+function presentLead(lead, plan) {
+  const result = lead.toObject();
+  if (!hasPlanFeature(plan, "advancedAnalytics")) {
+    delete result.activityLog;
+  }
+  if (!hasPlanFeature(plan, "aiLeadQualification")) {
+    delete result.aiScore;
+    delete result.aiLeadTemperature;
+    delete result.aiSentiment;
+    delete result.aiSummary;
+    delete result.aiNextAction;
+  }
+  return result;
 }
 
 if(lead.status === "contacted"){
@@ -136,8 +166,22 @@ router.post("/", auth, async (req, res) => {
       });
     }
 
+    const workspaceOwnerId = getWorkspaceOwnerId(req.user);
+    const existingLead = await Lead.findOne({
+      $and: [
+        getWorkspaceLeadQuery(req.user),
+        { phone: String(phone).trim() }
+      ]
+    });
+    if (existingLead) {
+      return res.status(400).json({
+        message: "This phone number already exists in your leads."
+      });
+    }
+
     const lead = new Lead({
       user: req.user._id,
+      workspaceOwner: workspaceOwnerId,
       name,
       phone,
       email,
@@ -145,45 +189,13 @@ router.post("/", auth, async (req, res) => {
       notes,
 nextFollowUpAt: nextFollowUpAt ? new Date(nextFollowUpAt) : null,
     });
-const ai =
-calculateLeadAI(lead);
-
-lead.aiScore =
-ai.aiScore;
-
-lead.aiLeadTemperature =
-ai.aiLeadTemperature;
-
-lead.aiSentiment =
-ai.aiSentiment;
-
-lead.aiSummary =
-ai.aiSummary;
-
-lead.aiNextAction =
-ai.aiNextAction;
+await qualifyLead(lead, req.workspaceOwner);
 
 await lead.save();
 
-const user = await User.findById(req.user._id);
-
-// 🎁 START FREE TRIAL WHEN FIRST LEAD ADDED
-if (user.plan === "free" && !user.planExpiresAt && !user.freeTrialUsed) {
-
-  user.plan = "pro";
-  user.freeTrialUsed = true;
-
-  const expiry = new Date();
-  expiry.setDate(expiry.getDate() + 14);
-
-  user.planExpiresAt = expiry;
-
-  await user.save();
-}
-
     res.status(201).json({
       message: "Lead created successfully",
-      lead,
+      lead: presentLead(lead, req.workspaceOwner.plan),
     });
   } catch (error) {
     console.error("Create lead error:", error);
@@ -206,18 +218,12 @@ res.status(500).json({
  */
 router.get("/", auth, async (req, res) => {
   try {
-    let leads = await Lead.find({ user: req.user._id }).sort({ createdAt: -1 });
+    const leads = await Lead.find(getWorkspaceLeadQuery(req.user))
+      .sort({ createdAt: -1 });
 
-    // Remove activity log for free users
-    if (req.user.plan !== "pro") {
-      leads = leads.map(lead => {
-        const obj = lead.toObject();
-        delete obj.activityLog;
-        return obj;
-      });
-    }
-
-    res.status(200).json(leads);
+    res.status(200).json(
+      leads.map(lead => presentLead(lead, req.workspaceOwner.plan))
+    );
 
   } catch (error) {
     console.error("Get leads error:", error);
@@ -228,20 +234,17 @@ router.get("/", auth, async (req, res) => {
 router.get("/:id", auth, async (req, res) => {
   try {
     const lead = await Lead.findOne({
-      _id: req.params.id,
-      user: req.user._id
+      $and: [
+        { _id: req.params.id },
+        getWorkspaceLeadQuery(req.user)
+      ]
     });
 
     if (!lead) {
       return res.status(404).json({ message: "Lead not found" });
     }
 
-    const result = lead.toObject();
-    if (!["pro", "agent"].includes(req.user.plan)) {
-      delete result.activityLog;
-    }
-
-    res.json(result);
+    res.json(presentLead(lead, req.workspaceOwner.plan));
   } catch (error) {
     console.error("Get lead error:", error);
     res.status(500).json({ message: "Server error" });
@@ -252,19 +255,19 @@ router.get("/:id", auth, async (req, res) => {
 
 /**
  * @route   PUT /api/leads/:id
- * @desc    Update lead + trigger automation (PRO ONLY)
- * @access  Private + Pro
+ * @desc    Update a lead and trigger plan-eligible automation
+ * @access  Private
  */
 router.put("/:id", auth, async (req, res) => {
   try {
     const { status, notes, nextFollowUpAt, followUpDate, name, phone, lostReason } = req.body;
 
-    const lead = await Lead
-.findOne({
-  _id: req.params.id,
-  user: req.user._id
-})
-.populate("user");
+    const lead = await Lead.findOne({
+      $and: [
+        { _id: req.params.id },
+        getWorkspaceLeadQuery(req.user)
+      ]
+    });
 
     if (!lead) {
       return res.status(404).json({ message: "Lead not found" });
@@ -288,23 +291,7 @@ if (status === "lost") {
     if (followUpDate !== undefined) lead.followUpDate = followUpDate;
 
     lead.lastContactedAt = new Date();
-const ai =
-calculateLeadAI(lead);
-
-lead.aiScore =
-ai.aiScore;
-
-lead.aiLeadTemperature =
-ai.aiLeadTemperature;
-
-lead.aiSentiment =
-ai.aiSentiment;
-
-lead.aiSummary =
-ai.aiSummary;
-
-lead.aiNextAction =
-ai.aiNextAction;
+    await qualifyLead(lead, req.workspaceOwner);
     // Create activity log if not exists
 if (!lead.activityLog) {
   lead.activityLog = [];
@@ -332,10 +319,7 @@ if (notes !== undefined) {
 }
 
    // ✅ automation only for PRO
-if (
-  req.user.plan === "pro" ||
-  req.user.plan === "agent"
-) {
+if (hasPlanFeature(req.workspaceOwner.plan, "advancedAnalytics")) {
   await handleLeadAutomation(lead, previousStatus);
 }
 
@@ -344,7 +328,7 @@ await lead.save();
 
 res.status(200).json({
   message: "Lead updated successfully",
-  lead,
+  lead: presentLead(lead, req.workspaceOwner.plan),
 });
   } catch (error) {
     console.error("Update lead error:", error);
@@ -367,8 +351,10 @@ res.status(500).json({ message: "Server error" });
 router.delete("/:id", auth, async (req, res) => {
   try {
     const lead = await Lead.findOneAndDelete({
-      _id: req.params.id,
-      user: req.user._id,
+      $and: [
+        { _id: req.params.id },
+        getWorkspaceLeadQuery(req.user)
+      ]
     });
 
     if (!lead) {
@@ -397,7 +383,7 @@ router.delete("/:id", auth, async (req, res) => {
 const activeFollowupRuns = new Set();
 
 router.post("/send-followups", auth, async (req, res) => {
-  const userId = String(req.user._id);
+  const userId = String(req.workspaceOwner._id);
 
   // Prevent simultaneous duplicate runs from the same user
   if (activeFollowupRuns.has(userId)) {
@@ -410,13 +396,13 @@ router.post("/send-followups", auth, async (req, res) => {
 
   try {
     // Allow Pro and Agent plans
-    if (!["pro", "agent"].includes(req.user.plan)) {
+    if (!hasPlanFeature(req.workspaceOwner.plan, "whatsapp")) {
       return res.status(403).json({
-        message: "WhatsApp follow-ups require a Pro plan."
+        message: "WhatsApp follow-ups are not available on your current plan."
       });
     }
 
-    const user = await User.findById(req.user._id);
+    const user = req.workspaceOwner;
 
     if (!user) {
       return res.status(404).json({
@@ -438,10 +424,18 @@ router.post("/send-followups", auth, async (req, res) => {
 
     // Only select due leads.
     // Do not message closed or lost leads.
+    const dueLeadFilters = [
+      getWorkspaceLeadQuery(req.user),
+      {
+        nextFollowUpAt: { $lte: now },
+        status: { $nin: ["closed", "lost"] }
+      }
+    ];
+    if (hasPlanFeature(user.plan, "advancedAnalytics")) {
+      dueLeadFilters.push({ humanTakeover: { $ne: true } });
+    }
     const dueLeads = await Lead.find({
-      user: req.user._id,
-      nextFollowUpAt: { $lte: now },
-      status: { $nin: ["closed", "lost"] }
+      $and: dueLeadFilters
     }).sort({ nextFollowUpAt: 1 });
 
     if (!dueLeads.length) {
@@ -615,13 +609,17 @@ Requirements:
  */
 router.post("/run-automation", auth, async (req, res) => {
   try {
-    if (req.user.plan !== "pro") {
+    if (!hasPlanFeature(req.workspaceOwner.plan, "advancedAnalytics")) {
       return res.status(403).json({ message: "Pro plan required" });
     }
 
+    const filters = [
+      getWorkspaceLeadQuery(req.user),
+      { nextFollowUpAt: { $lte: new Date() } },
+      { humanTakeover: { $ne: true } }
+    ];
     const leads = await Lead.find({
-      user: req.user._id,
-      nextFollowUpAt: { $lte: new Date() }
+      $and: filters
     });
 
     if (!leads.length) {
@@ -641,22 +639,55 @@ router.post("/run-automation", auth, async (req, res) => {
     res.status(500).json({ message: "Automation failed" });
   }
 });
+
+router.put("/:id/human-takeover", auth, async (req, res) => {
+  if (!hasPlanFeature(req.workspaceOwner.plan, "advancedAnalytics")) {
+    return res.status(403).json({
+      message: "Human takeover is available on Pro and Agent plans."
+    });
+  }
+  if (typeof req.body?.enabled !== "boolean") {
+    return res.status(400).json({ message: "Set enabled to true or false." });
+  }
+
+  try {
+    const lead = await Lead.findOne({
+      $and: [
+        { _id: req.params.id },
+        getWorkspaceLeadQuery(req.user)
+      ]
+    });
+    if (!lead) {
+      return res.status(404).json({ message: "Lead not found." });
+    }
+
+    lead.humanTakeover = req.body.enabled;
+    await lead.save();
+    res.json({ humanTakeover: lead.humanTakeover });
+  } catch (error) {
+    console.error("Update human takeover error:", error);
+    res.status(500).json({ message: "Could not update human takeover." });
+  }
+});
+
 /**
  * @route POST /api/leads/:id/send-whatsapp
- * @desc Send WhatsApp message to lead (PRO ONLY)
+ * @desc Send WhatsApp message to lead on a paid plan
  */
 router.post("/:id/send-whatsapp", auth, async (req, res) => {
   try {
 
-    if (req.user.plan !== "pro") {
+    if (!hasPlanFeature(req.workspaceOwner.plan, "whatsapp")) {
       return res.status(403).json({
-        message: "WhatsApp messaging is a Pro feature"
+        message: "WhatsApp messaging is not available on your current plan."
       });
     }
 
     const lead = await Lead.findOne({
-      _id: req.params.id,
-      user: req.user._id
+      $and: [
+        { _id: req.params.id },
+        getWorkspaceLeadQuery(req.user)
+      ]
     });
 
     if (!lead) {
@@ -665,37 +696,62 @@ router.post("/:id/send-whatsapp", auth, async (req, res) => {
       });
     }
 
+    const hasManualMessage = req.body?.message !== undefined;
+    const manualMessage = typeof req.body?.message === "string"
+      ? req.body.message.trim()
+      : "";
+    if (hasManualMessage && (!manualMessage || manualMessage.length > 1000)) {
+      return res.status(400).json({
+        message: "Enter a message between 1 and 1,000 characters."
+      });
+    }
+    if (hasManualMessage && !hasPlanFeature(req.workspaceOwner.plan, "advancedAnalytics")) {
+      return res.status(403).json({
+        message: "Manual WhatsApp replies are available on Pro and Agent plans."
+      });
+    }
+    if (hasManualMessage && !lead.humanTakeover) {
+      return res.status(409).json({
+        message: "Enable human takeover before sending a manual reply."
+      });
+    }
+    if (lead.humanTakeover && !hasManualMessage) {
+      return res.status(400).json({
+        message: "Human takeover is active. Enter a manual reply to send."
+      });
+    }
+
     if (
-      !req.user.whatsapp?.connected ||
-      !req.user.whatsapp.accessToken ||
-      !req.user.whatsapp.phoneNumberId
+      !req.workspaceOwner.whatsapp?.connected ||
+      !req.workspaceOwner.whatsapp.accessToken ||
+      !req.workspaceOwner.whatsapp.phoneNumberId
     ) {
       return res.status(400).json({
         message: "Connect WhatsApp before sending messages."
       });
     }
 
-    if (resetMonthlyUsage(req.user)) {
-      await req.user.save();
+    if (resetMonthlyUsage(req.workspaceOwner)) {
+      await req.workspaceOwner.save();
     }
 
-    if (!hasRemainingUsage(req.user, "followUps")) {
+    if (!hasRemainingUsage(req.workspaceOwner, "followUps")) {
       return res.status(429).json({
         message: "Monthly follow-up limit reached. Please upgrade."
       });
     }
 
-    const message = await generateMessage({
+    const message = manualMessage || await generateMessage({
       message: "follow up customer",
-      user: req.user,
+      user: req.workspaceOwner,
       lead
     });
 
     const providerMessageId = await sendWhatsAppMessage({
       phone: lead.phone,
       message,
-      accessToken: req.user.whatsapp.accessToken,
-      phoneNumberId: req.user.whatsapp.phoneNumberId
+      accessToken: req.workspaceOwner.whatsapp.accessToken,
+      phoneNumberId: req.workspaceOwner.whatsapp.phoneNumberId
     });
 
     lead.conversation.push({
@@ -703,9 +759,11 @@ router.post("/:id/send-whatsapp", auth, async (req, res) => {
       content: message,
       providerMessageId
     });
+    lead.lastMessageAt = new Date();
+    lead.lastContactedAt = lead.lastMessageAt;
     await lead.save();
 
-    await recordPlanUsage(req.user, "followUps");
+    await recordPlanUsage(req.workspaceOwner, "followUps");
 
     res.json({
       message: "WhatsApp message sent successfully"

@@ -7,6 +7,11 @@ const LeadSchema = new mongoose.Schema(
       ref: "User",
       required: true
     },
+    workspaceOwner: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      index: true
+    },
 
     name: {
       type: String,
@@ -71,6 +76,10 @@ followUpStep: {
 },
 lastMessageAt: Date,
 replied: {
+  type: Boolean,
+  default: false
+},
+humanTakeover: {
   type: Boolean,
   default: false
 },
@@ -172,6 +181,7 @@ aiLeadTemperature: {
 );
 // ✅ Unique phone per user (compound index)
 LeadSchema.index({ user: 1, phone: 1 }, { unique: true });
+LeadSchema.index({ workspaceOwner: 1, phone: 1 });
 LeadSchema.index(
   { user: 1, metaLeadId: 1 },
   {

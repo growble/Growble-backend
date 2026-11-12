@@ -237,6 +237,7 @@ async function importLead({ pageId, leadgenId }) {
 
   const lead = new Lead({
     user: user._id,
+    workspaceOwner: user._id,
     name: fullName || "Facebook lead",
     phone,
     email,

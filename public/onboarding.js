@@ -204,6 +204,56 @@ document
 "pdfUpload"
 );
 
+const knowledgeDocuments=
+document.getElementById("knowledgeDocuments");
+const knowledgeDocumentUsage=
+document.getElementById("knowledgeDocumentUsage");
+const uploadStatus=
+document.getElementById("uploadStatus");
+const token=
+localStorage.getItem("token");
+
+async function loadKnowledgeDocuments(){
+  try{
+    const res=await fetch("/api/knowledge-documents",{
+      headers:{Authorization:`Bearer ${token}`}
+    });
+    const data=await res.json();
+    if(!res.ok) throw new Error(data.message||"Could not load documents.");
+
+    knowledgeDocumentUsage.textContent=
+      `Knowledge documents: ${data.used}/${data.limit === null ? "Unlimited" : data.limit}`;
+    knowledgeDocuments.replaceChildren();
+    data.documents.forEach(document=>{
+      const row=document.createElement("div");
+      row.style.cssText="display:flex;justify-content:space-between;gap:12px;align-items:center;margin-top:8px;padding:8px;border:1px solid rgba(255,255,255,.12);border-radius:8px";
+      const name=document.createElement("span");
+      name.textContent=document.name;
+      const remove=document.createElement("button");
+      remove.type="button";
+      remove.textContent="Remove";
+      remove.onclick=async()=>{
+        try{
+          const deleteRes=await fetch(`/api/knowledge-documents/${encodeURIComponent(document._id)}`,{
+            method:"DELETE",
+            headers:{Authorization:`Bearer ${token}`}
+          });
+          const deleteData=await deleteRes.json();
+          if(!deleteRes.ok) throw new Error(deleteData.message||"Could not remove document.");
+          uploadStatus.textContent=deleteData.message;
+          await loadKnowledgeDocuments();
+        }catch(error){
+          uploadStatus.textContent=error.message;
+        }
+      };
+      row.append(name,remove);
+      knowledgeDocuments.append(row);
+    });
+  }catch(error){
+    knowledgeDocumentUsage.textContent=error.message;
+  }
+}
+
 uploadBtn.onclick=()=>{
 
 pdfUpload.click();
@@ -229,7 +279,7 @@ document
 "uploadStatus"
 );
 
-status.innerHTML=
+status.textContent=
 
 "Uploading brochure...";
 
@@ -248,7 +298,7 @@ try{
 const res=
 
 await fetch(
-"/api/upload-brochure",
+"/api/knowledge-documents",
 {
   method:"POST",
   headers:{
@@ -259,35 +309,24 @@ await fetch(
 }
 );
 
-const data=
+const data=await res.json();
+if(!res.ok) throw new Error(data.message||"Upload failed.");
 
-await res.json();
+status.textContent=`✅ ${data.document.name} added to shared AI knowledge.`;
+pdfUpload.value="";
+await loadKnowledgeDocuments();
 
-if(data.success){
+}catch(error){
 
-status.innerHTML=
-
-`✅ AI learned ${data.learned} facts`;
-
-}else{
-
-status.innerHTML=
-
-"Upload failed";
-
-}
-
-}catch{
-
-status.innerHTML=
-
-"Server error";
+status.textContent=error.message||"Server error";
 
 }
 
 }
 
 );
+
+loadKnowledgeDocuments();
 
 document
 

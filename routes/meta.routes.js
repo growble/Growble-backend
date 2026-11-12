@@ -4,12 +4,23 @@ const router = express.Router();
 const authMiddleware = require("../middleware/authMiddleware");
 const metaService = require("../services/meta.service");
 const facebookLeadAdsService = require("../services/facebookLeadAds.service");
+const { hasPlanFeature } = require("../utils/planEntitlements");
 
 function requireLeadAdsPlan(req, res, next) {
-  if (!["pro", "agent"].includes(req.user.plan)) {
+  if (!hasPlanFeature(req.workspaceOwner.plan, "facebookLeadAds")) {
     return res.status(403).json({
       success: false,
       message: "Facebook Lead Ads integration is available on Pro and Agent plans."
+    });
+  }
+  next();
+}
+
+function requireWhatsAppPlan(req, res, next) {
+  if (!hasPlanFeature(req.workspaceOwner.plan, "whatsapp")) {
+    return res.status(403).json({
+      success: false,
+      message: "WhatsApp integration is available on paid plans."
     });
   }
   next();
@@ -42,10 +53,10 @@ router.get(
   "/facebook-leads/status",
   authMiddleware,
   (req, res) => {
-    const pages = req.user.facebookLeadAds?.pages || [];
+    const pages = req.workspaceOwner.facebookLeadAds?.pages || [];
     res.json({
       success: true,
-      canConnect: ["pro", "agent"].includes(req.user.plan),
+      canConnect: hasPlanFeature(req.workspaceOwner.plan, "facebookLeadAds"),
       pages: pages.map(({ pageId, pageName, connectedAt }) => ({
         pageId,
         pageName,
@@ -106,7 +117,7 @@ router.post(
       const result = await facebookLeadAdsService.connectPages(
         accessToken,
         pageIds,
-        req.user._id
+        req.workspaceOwner._id
       );
       res.json({
         success: true,
@@ -132,7 +143,7 @@ router.delete(
     try {
       await facebookLeadAdsService.disconnectPage(
         req.params.pageId,
-        req.user._id
+        req.workspaceOwner._id
       );
       res.json({
         success: true,
@@ -148,15 +159,20 @@ router.delete(
   }
 );
 
-router.get("/status", authMiddleware, (req, res) => {
+router.get("/status", authMiddleware, requireWhatsAppPlan, (req, res) => {
   res.json({
     success: true,
-    connected: req.user.whatsapp.connected,
-    whatsapp: req.user.whatsapp
+    connected: req.workspaceOwner.whatsapp.connected,
+    whatsapp: {
+      connected: req.workspaceOwner.whatsapp.connected,
+      phoneNumber: req.workspaceOwner.whatsapp.phoneNumber,
+      displayName: req.workspaceOwner.whatsapp.displayName,
+      connectedAt: req.workspaceOwner.whatsapp.connectedAt
+    }
   });
 });
 
-router.post("/exchange-code", authMiddleware, async (req, res) => {
+router.post("/exchange-code", authMiddleware, requireWhatsAppPlan, async (req, res) => {
   try {
     const { code } = req.body;
 
@@ -169,7 +185,7 @@ router.post("/exchange-code", authMiddleware, async (req, res) => {
 
     const result = await metaService.connectCustomer(
       code,
-      req.user._id
+      req.workspaceOwner._id
     );
 
     return res.json({

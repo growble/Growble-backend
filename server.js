@@ -26,6 +26,7 @@ const paymentRoutes = require("./routes/payment.routes");
 const razorpayWebhookRoutes = require("./routes/razorpayWebhook.routes");
 const userRoutes = require("./routes/user.routes");
 const metaRoutes = require("./routes/meta.routes");
+const teamRoutes = require("./routes/team.routes");
 
 /* 🔹 MIDDLEWARES */
 const authMiddleware = require("./middleware/authMiddleware");
@@ -67,6 +68,7 @@ app.use("/api/usage", usageRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/payment", paymentRoutes);
 app.use("/api/user", userRoutes);
+app.use("/api/team", teamRoutes);
 app.use("/api/templates", require("./routes/templateRoutes"));
 app.use("/api/ai", require("./routes/aiRoutes"));
 app.use("/webhook", require("./routes/webhook"));
@@ -77,6 +79,7 @@ app.use(
 uploadBrochure
 
 );
+app.use("/api/knowledge-documents", uploadBrochure);
 app.use("/api/meta", metaRoutes);
 
 /* 🔹 PROTECTED TEST ROUTE */

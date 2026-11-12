@@ -2,6 +2,7 @@ const cron = require("node-cron");
 const Lead = require("../models/Lead");
 const User = require("../models/User");
 const sendFollowUpEmail = require("../services/emailService");
+const { getWorkspaceLeadQuery } = require("../utils/workspace");
 
 function startAutomationCron() {
   cron.schedule("0 0 * * *", async () => {
@@ -11,13 +12,15 @@ function startAutomationCron() {
       const today = new Date();
 
       // Only Pro users
-      const proUsers = await User.find({ plan: "pro" });
+      const proUsers = await User.find({ plan: { $in: ["pro", "agent"] } });
 
       for (let user of proUsers) {
 
         const leads = await Lead.find({
-          user: user._id,
-          nextFollowUpAt: { $lte: today }
+          $and: [
+            getWorkspaceLeadQuery(user),
+            { nextFollowUpAt: { $lte: today } }
+          ]
         });
 
         for (let lead of leads) {

@@ -422,6 +422,8 @@ height:56px;
 
       <div class="actions">
         <div id="upgradeBtnContainer"></div>
+        <button type="button" class="btn btn-outline" id="teamBtn"
+          onclick="window.location.href='/team.html'" hidden>Team</button>
         <button type="button" class="btn btn-primary" id="addLeadBtn">+ Add Lead</button>
         <button class="btn btn-danger" id="logoutBtn">Logout</button>
       </div>
@@ -648,6 +650,10 @@ Loading AI...
 
 <div class="card-title" style="margin-top:18px;">Integrations</div>
 <div class="dashboard-tools" aria-label="Growble integrations">
+  <a class="dashboard-tool-link" href="/connect-whatsapp.html">
+    <span class="dashboard-tool-icon" aria-hidden="true">💬</span>
+    Connect WhatsApp Business
+  </a>
   <a class="dashboard-tool-link" href="/connect-facebook-leads.html">
     <span class="dashboard-tool-icon" aria-hidden="true">f</span>
     Connect Facebook Lead Ads
@@ -717,6 +723,14 @@ Loading AI...
   <h4 style="color:#00d4ff;">WhatsApp Conversation</h4>
   <p class="small">Messages sent through Growble and customer replies appear here.</p>
   <div id="conversationBox" style="max-height:260px; overflow:auto; margin-top:10px;"></div>
+  <div id="humanTakeoverControls" style="display:none;margin-top:12px;">
+    <button type="button" id="humanTakeoverButton" class="btn btn-outline"></button>
+    <p class="small">Pause AI replies and automated follow-ups while your team handles this conversation.</p>
+    <div id="humanReplyForm" style="display:none;margin-top:10px;">
+      <textarea id="humanReplyText" maxlength="1000" placeholder="Write a WhatsApp reply"></textarea>
+      <button type="button" id="sendHumanReplyButton" class="btn btn-primary" style="margin-top:8px;">Send manual reply</button>
+    </div>
+  </div>
 </div>
 <div id="activitySection" style="margin-top:20px;">
   <h4 style="color:#00d4ff;">Activity Log</h4>

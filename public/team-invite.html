@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Join Workspace - Growble</title>
+  <style>
+    *{box-sizing:border-box;font-family:Arial,Helvetica,sans-serif}
+    body{margin:0;min-height:100vh;display:grid;place-items:center;padding:20px;background:linear-gradient(135deg,#0b1220,#082f49);color:white}
+    main{width:min(440px,100%);padding:26px;border-radius:16px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14)}
+    h1{color:#00d4ff;font-size:23px}
+    p{line-height:1.55;opacity:.85}
+    a,button{display:inline-block;margin:8px 8px 0 0;padding:11px 15px;border:0;border-radius:9px;background:#00d4ff;color:#06131b;font-weight:700;text-decoration:none;cursor:pointer}
+    #status{min-height:24px}
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Growble workspace invitation</h1>
+    <p id="status">Checking invitation…</p>
+    <div id="actions"></div>
+  </main>
+  <script src="/team-invite.js"></script>
+</body>
+</html>

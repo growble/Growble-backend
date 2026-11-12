@@ -579,7 +579,7 @@ AI powered WhatsApp follow-ups to grow your business.
 
 </div>
 
-<div class="cards">
+<div class="cards" id="plans">
 
 <div class="card free">
 
@@ -597,7 +597,7 @@ Lead management starter
 
 </div>
 
-<button class="btn">
+<button class="btn" type="button" data-plan="free">
 
 Start Free
 
@@ -610,7 +610,7 @@ Start Free
 <div class="feature">❌ AI Replies</div>
 <div class="feature">❌ AI Sales Agent</div>
 <div class="feature">❌ Knowledge Base AI</div>
-<div class="feature">👤 Team Members: 1</div>
+<div class="feature">👤 Team Seats: 1 (owner included)</div>
 <div class="feature">📧 Email Support</div>
 
 </div>
@@ -631,7 +631,7 @@ Automation for growing teams
 
 </div>
 
-<button class="btn">
+<button class="btn" type="button" data-plan="starter">
 
 Start Starter
 
@@ -641,9 +641,9 @@ Start Starter
 <div class="feature">✅ 2,000 Follow-ups/month</div>
 <div class="feature">✅ WhatsApp Integration</div>
 <div class="feature">✅ Templates</div>
-<div class="feature">✅ Knowledge Base (20 Docs)</div>
+<div class="feature">✅ Shared Knowledge Base (20 PDFs)</div>
 <div class="feature">✅ 100 AI Replies/month</div>
-<div class="feature">👥 Team Members: 2</div>
+<div class="feature">👥 Team Seats: 2 (owner included)</div>
 <div class="feature">⭐ Priority Support</div>
 
 </div>
@@ -674,7 +674,7 @@ AI employee for business
 
 </div>
 
-<button class="btn">
+<button class="btn" type="button" data-plan="pro">
 
 Start Pro AI
 
@@ -686,9 +686,9 @@ Start Pro AI
 <div class="feature">✅ 500 AI Lead Qualifications</div>
 <div class="feature">✅ Hot Lead Detection</div>
 <div class="feature">✅ Human Takeover</div>
-<div class="feature">✅ Knowledge Base (100 Docs)</div>
+<div class="feature">✅ Shared Knowledge Base (100 PDFs)</div>
 <div class="feature">✅ Advanced Analytics</div>
-<div class="feature">👥 Team Members: 10</div>
+<div class="feature">👥 Team Seats: 10 (owner included)</div>
 
 </div>
 
@@ -718,7 +718,7 @@ AI sells 24×7
 
 </div>
 
-<button class="btn">
+<button class="btn" type="button" data-plan="agent">
 
 Get AI Agent
 
@@ -731,8 +731,8 @@ Get AI Agent
 <div class="feature">✅ AI Sales Agent</div>
 <div class="feature">✅ AI Objection Handling</div>
 <div class="feature">✅ Smart Lead Nurturing</div>
-<div class="feature">✅ Unlimited Knowledge Base</div>
-<div class="feature">👥 Unlimited Team Members</div>
+<div class="feature">✅ Unlimited Shared PDF Knowledge Base</div>
+<div class="feature">👥 Unlimited Team Seats (owner included)</div>
 <div class="feature">👑 VIP Support</div>
 </div>
 
@@ -743,6 +743,7 @@ Get AI Agent
 <div class="section">
 
 <h2>Fair Usage Policy</h2>
+<p>Team seats and PDF document limits are shared across your workspace. The owner counts as one team seat.</p>
 
 <div class="faq">
 <b>Lock your price forever</b>
@@ -871,10 +872,20 @@ Compare Features
 
 <tr>
 
-<td>Team Members</td>
+<td>Team Seats (including owner)</td>
 <td>1</td>
 <td>2</td>
 <td>10</td>
+<td>Unlimited</td>
+
+</tr>
+
+<tr>
+
+<td>Shared PDF Knowledge Documents</td>
+<td>0</td>
+<td>20</td>
+<td>100</td>
 <td>Unlimited</td>
 
 </tr>
@@ -969,6 +980,7 @@ Start Free
 
 </div>
 
+<script src="/plan-selection.js"></script>
 <script>
 
 function calc(){

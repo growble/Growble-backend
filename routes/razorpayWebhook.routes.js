@@ -2,6 +2,7 @@ const express = require("express");
 const crypto = require("crypto");
 const User = require("../models/User");
 const extendPlan = require("../utils/extendPlan");
+const PLAN_LIMITS = require("../config/PlanLimits");
 
 const router = express.Router();
 
@@ -39,7 +40,7 @@ router.post(
         const plan = payment.notes?.plan; // "pro"
         const paymentId = payment.id;
 
-        if (!userId || !plan) {
+        if (!userId || !["starter", "pro", "agent"].includes(plan)) {
           return res.status(400).json({ message: "Missing payment notes" });
         }
 
@@ -57,22 +58,12 @@ router.post(
         user.lastPaymentId = paymentId;
 
         // ⏳ 6. Decide plan duration
-        let daysToAdd = 0;
-
-       if(plan === "starter"){
- user.plan = "starter";
- daysToAdd = 30;
-}
-
-if(plan === "pro"){
- user.plan = "pro";
- daysToAdd = 30;
-}
-
-if(plan === "agent"){
- user.plan = "agent";
- daysToAdd = 30;
-}
+        const paymentAmount = PLAN_LIMITS[plan].price * 100;
+        if (payment.amount !== paymentAmount) {
+          return res.status(400).json({ message: "Payment amount does not match the selected plan" });
+        }
+        user.plan = plan;
+        const daysToAdd = 30;
 
         // 📅 7. Extend plan expiry
         user.planExpiresAt = extendPlan(user.planExpiresAt, daysToAdd);

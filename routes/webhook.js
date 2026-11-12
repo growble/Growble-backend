@@ -4,6 +4,7 @@ const crypto = require("crypto");
 const Lead = require("../models/Lead");
 const User = require("../models/User");
 const PLAN_LIMITS = require("../config/PlanLimits");
+const { hasPlanFeature } = require("../utils/planEntitlements");
 const sendWhatsAppMessage = require("../utils/whatsappSender");
 const facebookLeadAdsService = require("../services/facebookLeadAds.service");
 
@@ -69,7 +70,13 @@ router.post("/", async (req, res) => {
         })
         : null;
       const lead = user
-        ? await Lead.findOne({ user: user._id, phone: from })
+        ? await Lead.findOne({
+          phone: from,
+          $or: [
+            { workspaceOwner: user._id },
+            { user: user._id, workspaceOwner: { $exists: false } }
+          ]
+        })
         : null;
 
       const alreadyRecorded = Boolean(
@@ -116,6 +123,13 @@ if (
   lead.demoRequested = true;
   await lead.save();
 }
+
+      if (
+        lead?.humanTakeover &&
+        hasPlanFeature(user?.plan, "advancedAnalytics")
+      ) {
+        return res.sendStatus(200);
+      }
 
       // ✅ AI REPLY
       const generateMessage = require("../utils/aiMessage");

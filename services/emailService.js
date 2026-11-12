@@ -51,7 +51,36 @@ async function sendPasswordResetEmail(to, resetUrl) {
   await transporter.sendMail(mailOptions);
 }
 
+async function sendTeamInvitationEmail(to, inviterName, inviteUrl, planName) {
+  const safeInviterName = String(inviterName)
+    .replace(/[\r\n\x00-\x1F]/g, " ")
+    .replace(/[&<>"']/g, character => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;"
+    }[character]));
+  const mailOptions = {
+    from: `"Growble CRM" <${process.env.EMAIL_USER}>`,
+    to,
+    subject: `${inviterName} invited you to join their Growble workspace`,
+    text: `${safeInviterName} invited you to join their Growble ${planName} workspace. Accept the invitation within 7 days: ${inviteUrl}`,
+    html: `
+      <div style="font-family:Arial,sans-serif;line-height:1.6;color:#172033;max-width:560px;margin:auto">
+        <h2 style="color:#008eaa">Join a Growble workspace</h2>
+        <p>${safeInviterName} invited you to collaborate in their Growble workspace.</p>
+        <p><a href="${inviteUrl}" style="display:inline-block;padding:12px 18px;border-radius:8px;background:#00d4ff;color:#06131b;text-decoration:none;font-weight:bold">Accept invitation</a></p>
+        <p>This invitation expires in 7 days. If you did not expect this email, you can ignore it.</p>
+      </div>
+    `
+  };
+
+  await transporter.sendMail(mailOptions);
+}
+
 sendFollowUpEmail.sendPasswordResetEmail = sendPasswordResetEmail;
+sendFollowUpEmail.sendTeamInvitationEmail = sendTeamInvitationEmail;
 sendFollowUpEmail.isConfigured = () =>
   Boolean(process.env.EMAIL_USER && process.env.EMAIL_PASS);
 
