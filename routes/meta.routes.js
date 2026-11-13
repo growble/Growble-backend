@@ -159,7 +159,7 @@ router.delete(
   }
 );
 
-router.get("/status", authMiddleware, requireWhatsAppPlan, (req, res) => {
+router.get("/status", authMiddleware, (req, res) => {
   res.json({
     success: true,
     connected: req.workspaceOwner.whatsapp.connected,

@@ -600,6 +600,34 @@ if (quickActionsBox) {
   }
 }
 
+async function loadWhatsAppStatus() {
+  const statusLabel = document.getElementById("whatsappIntegrationStatus");
+  if (!statusLabel) return;
+
+  try {
+    const response = await fetch("/api/meta/status", {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      throw new Error(data.message || "Could not load WhatsApp status.");
+    }
+
+    if (data.connected && data.whatsapp?.connected) {
+      const phoneNumber = data.whatsapp.phoneNumber;
+      statusLabel.textContent = phoneNumber
+        ? `WhatsApp connected · ${phoneNumber}`
+        : "WhatsApp connected";
+    } else {
+      statusLabel.textContent = "Connect WhatsApp Business";
+    }
+  } catch (error) {
+    console.error("WhatsApp status load failed:", error);
+    statusLabel.textContent = "WhatsApp status unavailable";
+  }
+}
+
 // =====================
 // LOAD LEADS (/api/leads)
 // =====================
@@ -1488,5 +1516,6 @@ window.generateAI = async function () {
 (async function init() {
   await loadUser();
   await loadLeads();
+  await loadWhatsAppStatus();
 })();
 });
