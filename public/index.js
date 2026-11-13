@@ -364,10 +364,14 @@ window.sendTodayFollowups = async function () {
       throw new Error(data?.message || "Failed to send follow-ups");
     }
     await loadLeads();
+    const firstFailure = data.results?.find(result => result.status === "failed");
+    const resultMessage = firstFailure
+      ? `${data.message} ${firstFailure.name || "Lead"}: ${firstFailure.reason}`
+      : data.message || "Follow-ups sent successfully.";
     showToast({
-      title: "✅ WhatsApp Follow-ups",
-      message: data.message || "Follow-ups sent successfully.",
-      duration: 6000
+      title: data.failed ? "⚠️ WhatsApp Follow-up Failed" : "✅ WhatsApp Follow-ups",
+      message: resultMessage,
+      duration: data.failed ? 10000 : 6000
     });
 
   } catch (err) {
