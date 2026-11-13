@@ -174,17 +174,23 @@ router.get("/status", authMiddleware, requireWhatsAppPlan, (req, res) => {
 
 router.post("/exchange-code", authMiddleware, requireWhatsAppPlan, async (req, res) => {
   try {
-    const { code } = req.body;
+    const { code, wabaId, phoneNumberId, businessId } = req.body || {};
 
-    if (!code) {
+    if (
+      typeof code !== "string" ||
+      code.length > 4096 ||
+      !/^\d{1,32}$/.test(String(wabaId || "")) ||
+      !/^\d{1,32}$/.test(String(phoneNumberId || "")) ||
+      (businessId && !/^\d{1,32}$/.test(String(businessId)))
+    ) {
       return res.status(400).json({
         success: false,
-        message: "Authorization code is required."
+        message: "Meta authorization code or WhatsApp account details are missing or invalid."
       });
     }
 
     const result = await metaService.connectCustomer(
-      code,
+      { code, wabaId, phoneNumberId, businessId },
       req.workspaceOwner._id
     );
 

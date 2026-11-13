@@ -53,33 +53,6 @@ async function exchangeCode(code) {
 
 }
 
-async function getClientBusinessId(accessToken) {
-
-  const data = await graphRequest({
-
-    endpoint: "/me",
-
-    accessToken,
-
-    params: {
-      fields: "client_business_id"
-    }
-
-  });
-
-  return data.client_business_id;
-
-}
-
-async function getSharedWABAs(accessToken, businessId) {
-  const data = await graphRequest({
-    endpoint: `/${businessId}/client_whatsapp_business_accounts`,
-    accessToken
-  });
-
-  return data.data || [];
-}
-
 async function getPhoneNumbers(accessToken, wabaId) {
   const data = await graphRequest({
     endpoint: `/${wabaId}/phone_numbers`,
@@ -97,52 +70,33 @@ async function subscribeApp(accessToken, wabaId) {
   });
 }
 
-async function connectCustomer(code, userId) {
-
-  // 1. Exchange authorization code
+async function connectCustomer({
+  code,
+  wabaId,
+  phoneNumberId,
+  businessId
+}, userId) {
   const accessToken = await exchangeCode(code);
 
-  // 2. Get customer's Business ID
-  const businessId = await getClientBusinessId(accessToken);
-
-  // 3. Fetch customer's WABAs
-  const wabas = await getSharedWABAs(
-    accessToken,
-    businessId
-  );
-
-  if (!wabas.length) {
-    throw new Error("No WhatsApp Business Account found.");
-  }
-
-  const waba = wabas[0];
-
-  // 4. Fetch phone numbers
   const phones = await getPhoneNumbers(
     accessToken,
-    waba.id
+    wabaId
   );
-
-  if (!phones.length) {
-    throw new Error("No business phone number found.");
+  const phone = phones.find(item => String(item.id) === String(phoneNumberId));
+  if (!phone) {
+    throw new Error("The phone number selected during WhatsApp signup was not found.");
   }
 
-  const phone = phones[0];
-
-  // 5. Subscribe webhook
-  await subscribeApp(
-    accessToken,
-    waba.id
-  );
+  await subscribeApp(accessToken, wabaId);
 
   await User.findByIdAndUpdate(
   userId,
   {
     $set: {
       "whatsapp.connected": true,
-      "whatsapp.businessId": businessId,
-      "whatsapp.businessAccountId": waba.id,
-      "whatsapp.wabaId": waba.id,
+      "whatsapp.businessId": businessId || "",
+      "whatsapp.businessAccountId": wabaId,
+      "whatsapp.wabaId": wabaId,
       "whatsapp.phoneNumberId": phone.id,
       "whatsapp.phoneNumber": phone.display_phone_number,
       "whatsapp.displayName": phone.verified_name || "",
@@ -157,7 +111,7 @@ async function connectCustomer(code, userId) {
   return {
     connected: true,
     businessId,
-    wabaId: waba.id,
+    wabaId,
     phoneNumberId: phone.id,
     phoneNumber: phone.display_phone_number,
     displayName: phone.verified_name
@@ -167,8 +121,6 @@ async function connectCustomer(code, userId) {
 
 module.exports = {
   exchangeCode,
-  getClientBusinessId,
-  getSharedWABAs,
   getPhoneNumbers,
   subscribeApp,
   connectCustomer
