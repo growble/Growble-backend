@@ -71,7 +71,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 `${result.data?.displayName || ""}\n` +
                 `${result.data?.phoneNumber || ""}`
             );
-            window.location.href = "/dashboard";
+            window.location.href = "/index.html";
         } catch (error) {
             console.error("WhatsApp connection error:", error);
             alert(`WhatsApp connection failed.\n\n${error.message}`);
