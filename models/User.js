@@ -93,6 +93,17 @@ billingHistory: {
   default: []
 },
 
+supportAssistantUsage: {
+  day: {
+    type: String,
+    default: null
+  },
+  count: {
+    type: Number,
+    default: 0,
+    min: 0
+  }
+},
 
     automationUsage: {
 usage: {

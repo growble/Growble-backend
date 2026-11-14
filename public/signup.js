@@ -5,9 +5,9 @@ const selectedPlan = ["free", "starter", "pro", "agent"].includes(requestedPlan)
   : "free";
 const planLabels = {
   free: "the Free plan",
-  starter: "Starter at ₹499/month",
-  pro: "Pro AI at ₹999/month",
-  agent: "AI Sales Agent at ₹1,499/month"
+  starter: "Starter at ₹499 for 30 days (one-time)",
+  pro: "Pro AI at ₹999 for 30 days (one-time)",
+  agent: "AI Sales Agent at ₹1,499 for 30 days (one-time)"
 };
 const signupSub = document.getElementById("signupSub");
 if (signupSub && selectedPlan !== "free") {

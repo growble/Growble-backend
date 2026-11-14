@@ -25,6 +25,8 @@ const leadRoutes = require("./routes/leadRoutes");
 const paymentRoutes = require("./routes/payment.routes");
 const razorpayWebhookRoutes = require("./routes/razorpayWebhook.routes");
 const userRoutes = require("./routes/user.routes");
+const supportRoutes = require("./routes/support.routes");
+const publicAssistantRoutes = require("./routes/publicAssistant.routes");
 const metaRoutes = require("./routes/meta.routes");
 const teamRoutes = require("./routes/team.routes");
 
@@ -68,6 +70,8 @@ app.use("/api/usage", usageRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/payment", paymentRoutes);
 app.use("/api/user", userRoutes);
+app.use("/api/support", supportRoutes);
+app.use("/api/public-assistant", publicAssistantRoutes);
 app.use("/api/team", teamRoutes);
 app.use("/api/templates", require("./routes/templateRoutes"));
 app.use("/api/ai", require("./routes/aiRoutes"));

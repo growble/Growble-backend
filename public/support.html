@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="theme-color" content="#0b1220"/>
+  <title>Growble Help</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      padding: 22px;
+      background: radial-gradient(ellipse at top right, #0a2a43, #0b1220 60%);
+      color: #eef5fc;
+      font-family: Arial, sans-serif;
+    }
+    main { max-width: 900px; margin: auto; }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      margin-bottom: 18px;
+    }
+    h1 { margin: 0; color: #00d4ff; font-size: 25px; }
+    h2 { margin: 0 0 10px; font-size: 17px; }
+    p { color: #a9bacb; line-height: 1.5; }
+    a { color: #8beaff; text-decoration: none; }
+    .card {
+      margin-bottom: 16px;
+      padding: 18px;
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 15px;
+      background: rgba(255,255,255,.055);
+    }
+    #accountSummary {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+      gap: 10px;
+    }
+    .summary-item {
+      padding: 10px;
+      border-radius: 10px;
+      background: rgba(0,0,0,.2);
+      color: #dce8f5;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    .status { min-height: 20px; margin-top: 8px; color: #a9bacb; font-size: 13px; }
+    .chat-card { display: flex; flex-direction: column; min-height: 490px; }
+    #chatMessages {
+      display: flex;
+      flex: 1;
+      flex-direction: column;
+      gap: 10px;
+      min-height: 230px;
+      max-height: 440px;
+      overflow-y: auto;
+      padding: 4px 2px 14px;
+    }
+    .message {
+      max-width: 88%;
+      padding: 11px 13px;
+      border-radius: 13px;
+      color: #e8f1fa;
+      font-size: 14px;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+    .message.assistant { align-self: flex-start; background: rgba(255,255,255,.09); }
+    .message.user { align-self: flex-end; background: rgba(0,212,255,.18); }
+    form { display: flex; align-items: flex-end; gap: 10px; }
+    textarea {
+      flex: 1;
+      min-height: 48px;
+      max-height: 130px;
+      resize: vertical;
+      padding: 12px;
+      border: 1px solid rgba(255,255,255,.16);
+      border-radius: 11px;
+      outline: none;
+      background: rgba(0,0,0,.25);
+      color: #fff;
+      font: inherit;
+    }
+    textarea:focus { border-color: #00d4ff; }
+    button {
+      min-height: 45px;
+      padding: 0 16px;
+      border: 0;
+      border-radius: 10px;
+      background: #00d4ff;
+      color: #07131d;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    button:disabled { cursor: wait; opacity: .6; }
+    .disclosure { margin-top: 12px; font-size: 12px; }
+    .contact { margin-top: 10px; font-size: 13px; }
+    #billingLink[hidden], #fullPageLink[hidden] { display: none; }
+    .visually-hidden {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+    body.widget-mode { min-height: 100%; padding: 0; background: #0b1220; }
+    body.widget-mode main {
+      display: flex;
+      max-width: none;
+      height: 100vh;
+      min-height: 0;
+      flex-direction: column;
+      padding: 12px;
+    }
+    body.widget-mode header { margin: 2px 2px 10px; }
+    body.widget-mode h1 { font-size: 19px; }
+    body.widget-mode .card { padding: 13px; margin-bottom: 10px; }
+    body.widget-mode #accountCard { display: none; }
+    body.widget-mode .chat-card { flex: 1; min-height: 0; }
+    body.widget-mode #chatMessages { min-height: 0; max-height: none; }
+    @media (max-width: 600px) {
+      body { padding: 12px; }
+      .card { padding: 14px; }
+      .chat-card { min-height: 65vh; }
+      form { align-items: stretch; }
+      button { padding: 0 12px; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>Growble Help</h1>
+      <nav>
+        <a id="fullPageLink" href="/support.html">Open full Help page</a>
+        <a id="dashboardLink" href="/index.html">Dashboard</a>
+      </nav>
+    </header>
+
+    <section class="card" id="accountCard" aria-labelledby="accountHeading">
+      <h2 id="accountHeading">Your workspace summary</h2>
+      <div id="accountSummary" aria-live="polite">
+        <div class="summary-item">Loading your workspace details…</div>
+      </div>
+    </section>
+
+    <section class="card chat-card" aria-labelledby="chatHeading">
+      <h2 id="chatHeading">Ask Growble support</h2>
+      <div id="supportStatus" class="status" role="status" aria-live="polite">
+        Loading support availability…
+      </div>
+      <div id="chatMessages" role="log" aria-live="polite" aria-relevant="additions"></div>
+      <form id="supportForm">
+        <label for="supportQuestion" class="visually-hidden">Your question</label>
+        <textarea id="supportQuestion" maxlength="1200" required
+          placeholder="Ask about your plan, usage, billing steps, or setup…"></textarea>
+        <button id="sendQuestion" type="submit">Send</button>
+      </form>
+      <p class="disclosure">
+        Up to 10 questions per signed-in user each UTC day; this does not use AI reply credits.
+        Obvious contact details and credentials are masked before AI processing. Do not include
+        lead/customer information, passwords, tokens, or payment details. Chat history is not saved.
+      </p>
+      <p class="contact">
+        Need a person? Email <a href="mailto:support@growble.app">support@growble.app</a>.
+        <a id="billingLink" href="/billing.html">View billing history</a>
+        <a href="/privacy-policy.html">Privacy policy</a>
+      </p>
+    </section>
+  </main>
+  <script src="/support.js"></script>
+</body>
+</html>
