@@ -118,7 +118,40 @@
       background: rgba(150,30,30,.18);
       color: #ffd1d1;
     }
+    .success-message {
+      display: none;
+      margin: 0 0 16px;
+      padding: 12px 14px;
+      border: 1px solid rgba(31,157,85,.4);
+      border-radius: 10px;
+      background: rgba(31,157,85,.15);
+      color: #b8ffd4;
+    }
     .empty-state { padding: 24px; color: #a9bacb; text-align: center; }
+    .action-buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+    dialog {
+      width: min(440px, calc(100% - 24px));
+      padding: 22px;
+      border: 1px solid rgba(255,255,255,.16);
+      border-radius: 16px;
+      color: #eef5fc;
+      background: #111d2d;
+      box-shadow: 0 24px 80px rgba(0,0,0,.55);
+    }
+    dialog::backdrop { background: rgba(3,8,15,.72); }
+    .plan-form { display: grid; gap: 14px; margin-top: 16px; }
+    .plan-form label { display: grid; gap: 7px; color: #c5d2df; font-size: 13px; }
+    .plan-form select, .plan-form input {
+      width: 100%;
+      min-height: 42px;
+      padding: 9px 10px;
+      border: 1px solid rgba(255,255,255,.16);
+      border-radius: 9px;
+      color: #eef5fc;
+      background: #0b1220;
+    }
+    .dialog-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 6px; }
+    .dialog-error { display: none; color: #ffd1d1; font-size: 13px; }
 
     @media (max-width: 920px) {
       body { padding: 16px; }
@@ -151,6 +184,7 @@
   </header>
 
   <div id="adminError" class="error-message" role="alert"></div>
+  <div id="adminSuccess" class="success-message" role="status"></div>
 
   <section class="metrics" aria-label="Growble metrics">
     <article class="card">
@@ -251,6 +285,31 @@
       </div>
     </div>
   </section>
+
+  <dialog id="planDialog" aria-labelledby="planDialogTitle">
+    <form id="planForm" class="plan-form">
+      <div>
+        <h2 id="planDialogTitle">Manage customer plan</h2>
+        <div class="subtle" id="planUserSummary"></div>
+      </div>
+      <label for="planSelect">Plan
+        <select id="planSelect" name="plan" required>
+          <option value="starter">Starter</option>
+          <option value="pro">Pro</option>
+          <option value="agent">Agent</option>
+        </select>
+      </label>
+      <label for="planDays">Add days
+        <input id="planDays" name="daysToAdd" type="number" min="1" max="3650" step="1" value="30" required/>
+      </label>
+      <div class="subtle">Days are added after the current expiry, or from today if the plan has expired.</div>
+      <div id="planDialogError" class="dialog-error" role="alert"></div>
+      <div class="dialog-actions">
+        <button type="button" class="btn" id="cancelPlanBtn">Cancel</button>
+        <button type="submit" class="btn" id="savePlanBtn">Save plan</button>
+      </div>
+    </form>
+  </dialog>
 </main>
 
 <script>

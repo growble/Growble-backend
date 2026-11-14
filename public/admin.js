@@ -8,6 +8,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const elements = {
     error: document.getElementById("adminError"),
+    success: document.getElementById("adminSuccess"),
     totalUsers: document.getElementById("totalUsers"),
     activeUsers: document.getElementById("activeUsers"),
     totalLeads: document.getElementById("totalLeads"),
@@ -22,7 +23,14 @@ document.addEventListener("DOMContentLoaded", () => {
     nextPage: document.getElementById("nextPage"),
     search: document.getElementById("searchInput"),
     plan: document.getElementById("planFilter"),
-    status: document.getElementById("statusFilter")
+    status: document.getElementById("statusFilter"),
+    planDialog: document.getElementById("planDialog"),
+    planForm: document.getElementById("planForm"),
+    planSelect: document.getElementById("planSelect"),
+    planDays: document.getElementById("planDays"),
+    planUserSummary: document.getElementById("planUserSummary"),
+    planDialogError: document.getElementById("planDialogError"),
+    savePlanBtn: document.getElementById("savePlanBtn")
   };
 
   let currentPage = 1;
@@ -33,13 +41,24 @@ document.addEventListener("DOMContentLoaded", () => {
   let usageChart;
 
   function showError(message) {
+    elements.success.textContent = "";
+    elements.success.style.display = "none";
     elements.error.textContent = message;
     elements.error.style.display = "block";
+  }
+
+  function showSuccess(message) {
+    elements.error.textContent = "";
+    elements.error.style.display = "none";
+    elements.success.textContent = message;
+    elements.success.style.display = "block";
   }
 
   function clearError() {
     elements.error.textContent = "";
     elements.error.style.display = "none";
+    elements.success.textContent = "";
+    elements.success.style.display = "none";
   }
 
   async function request(url, options = {}) {
@@ -235,13 +254,26 @@ document.addEventListener("DOMContentLoaded", () => {
       );
 
       const actionCell = document.createElement("td");
+      actionCell.className = "action-buttons";
       const button = document.createElement("button");
       button.type = "button";
       button.className = `btn ${user.isActive ? "btn-suspend" : "btn-activate"}`;
       button.textContent = user.isActive ? "Suspend" : "Activate";
       button.dataset.userId = user._id;
       button.dataset.active = String(user.isActive);
-      actionCell.appendChild(button);
+      button.dataset.action = "toggle-status";
+
+      const planButton = document.createElement("button");
+      planButton.type = "button";
+      planButton.className = "btn";
+      planButton.textContent = "Manage plan";
+      planButton.dataset.userId = user._id;
+      planButton.dataset.action = "manage-plan";
+      planButton.dataset.name = user.name || user.email;
+      planButton.dataset.plan = user.plan || "free";
+      planButton.dataset.expiresAt = user.planExpiresAt || "";
+
+      actionCell.append(button, planButton);
       row.appendChild(actionCell);
       elements.usersBody.appendChild(row);
     });
@@ -302,6 +334,50 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  function openPlanDialog(button) {
+    const currentPlan = button.dataset.plan;
+    elements.planSelect.value =
+      ["starter", "pro", "agent"].includes(currentPlan) ? currentPlan : "starter";
+    elements.planDays.value = "30";
+    elements.planUserSummary.textContent =
+      `${button.dataset.name} · current plan: ${currentPlan}` +
+      (button.dataset.expiresAt
+        ? ` · expires ${new Date(button.dataset.expiresAt).toLocaleDateString()}`
+        : " · no active expiry");
+    elements.planDialogError.textContent = "";
+    elements.planDialogError.style.display = "none";
+    elements.planDialog.showModal();
+  }
+
+  async function savePlan(event) {
+    event.preventDefault();
+    const userId = elements.planForm.dataset.userId;
+    const plan = elements.planSelect.value;
+    const daysToAdd = Number(elements.planDays.value);
+    elements.savePlanBtn.disabled = true;
+    elements.planDialogError.textContent = "";
+    elements.planDialogError.style.display = "none";
+
+    try {
+      const data = await request(`/api/admin/users/${encodeURIComponent(userId)}/plan`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan, daysToAdd })
+      });
+      elements.planDialog.close();
+      clearError();
+      showSuccess(data.message);
+      await Promise.all([loadUsers(currentPage), loadStats()]);
+    } catch (error) {
+      console.error("Update customer plan failed:", error);
+      elements.planDialogError.textContent =
+        error.message || "Could not update this customer's plan.";
+      elements.planDialogError.style.display = "block";
+    } finally {
+      elements.savePlanBtn.disabled = false;
+    }
+  }
+
   document.getElementById("logoutBtn").addEventListener("click", () => {
     localStorage.clear();
     window.location.href = "/login.html";
@@ -321,7 +397,17 @@ document.addEventListener("DOMContentLoaded", () => {
   });
   elements.usersBody.addEventListener("click", event => {
     const button = event.target.closest("button[data-user-id]");
-    if (button) toggleUser(button);
+    if (!button) return;
+    if (button.dataset.action === "manage-plan") {
+      elements.planForm.dataset.userId = button.dataset.userId;
+      openPlanDialog(button);
+    } else if (button.dataset.action === "toggle-status") {
+      toggleUser(button);
+    }
+  });
+  elements.planForm.addEventListener("submit", savePlan);
+  document.getElementById("cancelPlanBtn").addEventListener("click", () => {
+    elements.planDialog.close();
   });
 
   function applyFilters() {

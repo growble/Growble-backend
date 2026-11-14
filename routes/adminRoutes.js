@@ -1,9 +1,11 @@
 const express = require("express");
 const router = express.Router();
+const mongoose = require("mongoose");
 
 const User = require("../models/User");
 const Lead = require("../models/Lead.js");
 const PLAN_LIMITS = require("../config/PlanLimits");
+const extendPlan = require("../utils/extendPlan");
 
 const authMiddleware = require("../middleware/authMiddleware");
 const adminMiddleware = require("../middleware/adminMiddleware");
@@ -252,6 +254,74 @@ router.patch(
       console.error("Suspend user error:", err);
       res.status(500).json({
         message: "Failed to update user status"
+      });
+    }
+  }
+);
+
+/**
+ * PATCH /api/admin/users/:id/plan
+ * Change a customer's paid plan and extend its expiry.
+ */
+router.patch(
+  "/users/:id/plan",
+  authMiddleware,
+  adminMiddleware,
+  async (req, res) => {
+    try {
+      const { plan, daysToAdd } = req.body;
+      const parsedDays = Number(daysToAdd);
+
+      if (!["starter", "pro", "agent"].includes(plan)) {
+        return res.status(400).json({
+          message: "Plan must be starter, pro, or agent"
+        });
+      }
+
+      if (
+        !Number.isInteger(parsedDays) ||
+        parsedDays < 1 ||
+        parsedDays > 3650
+      ) {
+        return res.status(400).json({
+          message: "daysToAdd must be a whole number between 1 and 3650"
+        });
+      }
+
+      if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+        return res.status(400).json({
+          message: "Invalid user ID"
+        });
+      }
+
+      const user = await User.findOne({
+        _id: req.params.id,
+        role: "user"
+      });
+
+      if (!user) {
+        return res.status(404).json({
+          message: "User not found"
+        });
+      }
+
+      user.plan = plan;
+      user.planExpiresAt = extendPlan(user.planExpiresAt, parsedDays);
+      await user.save();
+
+      res.json({
+        success: true,
+        message: `${plan} plan extended by ${parsedDays} days`,
+        user: {
+          id: user._id,
+          plan: user.plan,
+          planExpiresAt: user.planExpiresAt
+        }
+      });
+    } catch (err) {
+      console.error("Update customer plan error:", err);
+      res.status(500).json({
+        message: "Failed to update customer plan"
       });
     }
   }
