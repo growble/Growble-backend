@@ -60,6 +60,7 @@ router.get("/me", auth, async (req, res) => {
         followUpsLimit: limits.followUps,
         aiQualificationUsed: usage.aiQualification,
         aiQualificationLimit: limits.aiQualification,
+        aiReplyCreditsRemaining: workspaceOwner.aiReplyCredits || 0,
         resetAt: usage.resetAt
       }
     });

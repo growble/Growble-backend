@@ -63,6 +63,36 @@ lastPaymentId: {
   type: String
 },
 
+processedPaymentIds: {
+  type: [String],
+  default: [],
+  select: false
+},
+
+aiReplyCredits: {
+  type: Number,
+  default: 0,
+  min: 0
+},
+
+billingHistory: {
+  type: [
+    {
+      paymentId: String,
+      type: {
+        type: String,
+        enum: ["plan", "ai_reply_pack"]
+      },
+      plan: String,
+      aiReplies: Number,
+      amount: Number,
+      currency: String,
+      processedAt: Date
+    }
+  ],
+  default: []
+},
+
 
     automationUsage: {
 usage: {

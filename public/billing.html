@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="theme-color" content="#0b1220"/>
+  <title>Billing & Payments | Growble</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      padding: 24px;
+      background: radial-gradient(ellipse at top right, #0a2a43, #0b1220 60%);
+      color: #eef5fc;
+      font-family: Arial, sans-serif;
+    }
+    main { max-width: 900px; margin: auto; }
+    .card {
+      padding: 22px;
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 16px;
+      background: rgba(255,255,255,.055);
+    }
+    header, .purchase {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+    }
+    header { margin-bottom: 20px; }
+    h1 { margin: 0; color: #00d4ff; font-size: 24px; }
+    h2 { margin: 0 0 10px; font-size: 18px; }
+    p { color: #a9bacb; line-height: 1.5; }
+    a { color: #8beaff; text-decoration: none; }
+    .btn {
+      display: inline-block;
+      padding: 10px 14px;
+      border: 1px solid rgba(0,212,255,.4);
+      border-radius: 10px;
+      color: #00d4ff;
+      background: transparent;
+      font-weight: 700;
+      text-decoration: none;
+    }
+    .purchase { margin-bottom: 18px; flex-wrap: wrap; }
+    .purchase[hidden] { display: none; }
+    .status { min-height: 22px; color: #a9bacb; }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td {
+      padding: 12px 10px;
+      border-bottom: 1px solid rgba(255,255,255,.08);
+      text-align: left;
+      font-size: 14px;
+    }
+    th { color: #9feeff; }
+    .empty { padding: 24px 10px; color: #a9bacb; text-align: center; }
+    @media (max-width: 560px) {
+      body { padding: 14px; }
+      .card { padding: 16px; }
+      th, td { padding: 10px 7px; font-size: 12px; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>Billing & payments</h1>
+      <a href="/index.html">← Dashboard</a>
+    </header>
+    <section class="card">
+      <div class="purchase" id="topupPurchase" hidden>
+        <div>
+          <h2 id="currentPlan">Current plan</h2>
+          <p id="planExpiry">Loading plan details…</p>
+        </div>
+        <a class="btn" href="/pricing.html">Renew / change plan</a>
+      </div>
+      <div class="purchase" id="topupOffer" hidden>
+        <p>AI reply top-up: 100 credits for ₹99. One-time purchase; credits carry forward until used.</p>
+        <a class="btn" href="/payment.html?product=ai-reply-pack">Buy credits</a>
+      </div>
+      <h2>Recent purchases</h2>
+      <div id="historyStatus" class="status" role="status" aria-live="polite">Loading payment history…</div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Purchase</th>
+              <th>Amount</th>
+            </tr>
+          </thead>
+          <tbody id="historyBody">
+            <tr><td class="empty" colspan="3">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+  <script src="/billing.js"></script>
+</body>
+</html>

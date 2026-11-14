@@ -1,6 +1,7 @@
 const axios = require("axios");
 const User = require("../models/User");
 const Lead = require("../models/Lead");
+const { qualifyLeadForWorkspace } = require("./leadQualificationService");
 const { encryptMetaToken, decryptMetaToken } = require("../utils/metaTokenCrypto");
 
 const GRAPH_VERSION = "v26.0";
@@ -247,6 +248,10 @@ async function importLead({ pageId, leadgenId }) {
   });
 
   try {
+    const qualification = await qualifyLeadForWorkspace(lead, user);
+    if (qualification.status === "unavailable") {
+      console.warn(`AI qualification unavailable for imported Facebook lead ${leadgenId}.`);
+    }
     await lead.save();
     console.log(`Facebook Lead Ads lead imported for Growble user ${user._id}.`);
   } catch (error) {

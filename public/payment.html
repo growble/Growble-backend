@@ -86,12 +86,12 @@
   <div class="card">
     <div class="brand">Growble</div>
 
-    <h2>Upgrade to <span id="planName" style="color:#00d4ff">PRO AI</span></h2>
-    <p style="opacity:0.85">Unlock premium growth features instantly.</p>
+    <h2><span id="purchaseTitle">Upgrade to</span> <span id="planName" style="color:#00d4ff">PRO AI</span></h2>
+    <p id="purchaseDescription" style="opacity:0.85">Unlock premium growth features instantly.</p>
 
-    <div class="price" id="planPrice">₹999 <span style="font-size:16px">/month</span></div>
+    <div class="price" id="planPrice">₹999 <span style="font-size:16px">/30 days</span></div>
 
-    <ul>
+    <ul id="purchaseBenefits">
       <li>✅ premium tools unlocked</li>
       <li>✅ exclusive learning plans</li>
       <li>✅ faster progress system</li>
@@ -99,6 +99,8 @@
     </ul>
 
     <button id="payBtn">Upgrade Now</button>
+    <p id="paymentStatus" role="status" aria-live="polite" style="display:none;margin-top:12px;line-height:1.5"></p>
+    <button id="retryActivationBtn" type="button" style="display:none">Check activation again</button>
 
     <a href="/index.html">← Back to Dashboard</a>
   </div>

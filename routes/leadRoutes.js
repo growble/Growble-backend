@@ -8,73 +8,13 @@ const sendWhatsAppMessage = require("../utils/whatsappSender");
 const generateMessage = require("../utils/aiMessage");
 const PLAN_LIMITS = require("../config/PlanLimits");
 const { hasPlanFeature } = require("../utils/planEntitlements");
+const { qualifyLeadForWorkspace } = require("../services/leadQualificationService");
 const { getWorkspaceLeadQuery, getWorkspaceOwnerId } = require("../utils/workspace");
 const {
   hasRemainingUsage,
   recordPlanUsage,
   resetMonthlyUsage
 } = require("../utils/planUsage");
-function calculateLeadAI(lead) {
-  let score = 50;
-
-  if (lead.status === "interested") score += 30;
-  if (lead.status === "contacted") score += 15;
-  if (lead.status === "closed") score = 100;
-  if (lead.status === "lost") score = 5;
-
-  if (lead.notes) {
-    const text = lead.notes.toLowerCase();
-    if (text.includes("fees") || text.includes("price")) score += 10;
-    if (text.includes("demo")) score += 15;
-    if (text.includes("not interested")) score -= 25;
-  }
-
-  const overdue =
-    lead.nextFollowUpAt &&
-    new Date(lead.nextFollowUpAt) < new Date();
-  if (overdue) score -= 15;
-
-  score = Math.max(0, Math.min(100, score));
-
-  let temperature = "cold";
-  if (score >= 80) {
-    temperature = "hot";
-  } else if (score >= 55) {
-    temperature = "warm";
-  }
-
-  let nextAction = "Follow up in 2 days";
-  if (score >= 80) {
-    nextAction = "Call immediately";
-  } else if (overdue) {
-    nextAction = "Send WhatsApp today";
-  }
-
-  return {
-    aiScore: score,
-    aiLeadTemperature: temperature,
-    aiSentiment: score >= 70 ? "positive" : score >= 40 ? "neutral" : "negative",
-    aiSummary: `Lead ${lead.status}.\nCurrent score ${score}.`,
-    aiNextAction: nextAction
-  };
-}
-
-async function qualifyLead(lead, workspaceOwner) {
-  if (resetMonthlyUsage(workspaceOwner)) {
-    await workspaceOwner.save();
-  }
-  if (
-    !hasPlanFeature(workspaceOwner.plan, "aiLeadQualification") ||
-    !hasRemainingUsage(workspaceOwner, "aiQualification")
-  ) {
-    return false;
-  }
-
-  Object.assign(lead, calculateLeadAI(lead));
-  await recordPlanUsage(workspaceOwner, "aiQualification");
-  return true;
-}
-
 function presentLead(lead, plan) {
   const result = lead.toObject();
   if (!hasPlanFeature(plan, "advancedAnalytics")) {
@@ -128,13 +68,14 @@ router.post("/", auth, async (req, res) => {
       notes,
 nextFollowUpAt: nextFollowUpAt ? new Date(nextFollowUpAt) : null,
     });
-await qualifyLead(lead, req.workspaceOwner);
+const qualification = await qualifyLeadForWorkspace(lead, req.workspaceOwner);
 
 await lead.save();
 
     res.status(201).json({
       message: "Lead created successfully",
       lead: presentLead(lead, req.workspaceOwner.plan),
+  qualificationStatus: qualification.status
     });
   } catch (error) {
     console.error("Create lead error:", error);
@@ -230,7 +171,15 @@ if (status === "lost") {
     if (followUpDate !== undefined) lead.followUpDate = followUpDate;
 
     lead.lastContactedAt = new Date();
-    await qualifyLead(lead, req.workspaceOwner);
+    let qualification = { status: "not_requested" };
+    if (
+      status !== undefined ||
+      notes !== undefined ||
+      nextFollowUpAt !== undefined ||
+      followUpDate !== undefined
+    ) {
+      qualification = await qualifyLeadForWorkspace(lead, req.workspaceOwner);
+    }
     // Create activity log if not exists
 if (!lead.activityLog) {
   lead.activityLog = [];
@@ -268,6 +217,7 @@ await lead.save();
 res.status(200).json({
   message: "Lead updated successfully",
   lead: presentLead(lead, req.workspaceOwner.plan),
+  qualificationStatus: qualification.status
 });
   } catch (error) {
     console.error("Update lead error:", error);

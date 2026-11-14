@@ -3,6 +3,7 @@ const crypto = require("crypto");
 const User = require("../models/User");
 const extendPlan = require("../utils/extendPlan");
 const PLAN_LIMITS = require("../config/PlanLimits");
+const aiReplyPack = require("../config/AiReplyPack");
 
 const router = express.Router();
 
@@ -32,53 +33,170 @@ router.post(
       const payload = JSON.parse(req.body.toString());
       const event = payload.event;
 
-      // ✅ 3. We only care about successful payments
       if (event === "payment.captured") {
         const payment = payload.payload.payment.entity;
-
         const userId = payment.notes?.userId;
-        const plan = payment.notes?.plan; // "pro"
         const paymentId = payment.id;
 
-        if (!userId || !["starter", "pro", "agent"].includes(plan)) {
+        if (
+          !userId ||
+          typeof paymentId !== "string" ||
+          !/^pay_[A-Za-z0-9]+$/.test(paymentId) ||
+          payment.currency !== "INR"
+        ) {
           return res.status(400).json({ message: "Missing payment notes" });
         }
 
-        // 👤 4. Find user
-        const user = await User.findById(userId);
+        const user = await User.findOne({ _id: userId, role: "user" })
+          .select("+processedPaymentIds");
         if (!user) {
           return res.status(404).json({ message: "User not found" });
         }
-
-        // 🔁 5. Prevent duplicate processing
-        if (user.lastPaymentId === paymentId) {
+        if (
+          user.lastPaymentId === paymentId ||
+          user.processedPaymentIds.includes(paymentId)
+        ) {
           return res.json({ status: "already processed" });
         }
 
-        user.lastPaymentId = paymentId;
+        if (payment.notes?.product === "ai_reply_pack") {
+          if (
+            payment.notes.packId !== aiReplyPack.id ||
+            payment.amount !== aiReplyPack.price * 100
+          ) {
+            return res.status(400).json({
+              message: "AI reply pack payment amount does not match the product."
+            });
+          }
 
-        // ⏳ 6. Decide plan duration
-        const paymentAmount = PLAN_LIMITS[plan].price * 100;
-        if (payment.amount !== paymentAmount) {
-          return res.status(400).json({ message: "Payment amount does not match the selected plan" });
+          const result = await User.updateOne(
+            {
+              _id: userId,
+              role: "user",
+              processedPaymentIds: { $ne: paymentId }
+            },
+            {
+              $inc: { aiReplyCredits: aiReplyPack.aiReplies },
+              $set: { lastPaymentId: paymentId },
+              $addToSet: { processedPaymentIds: paymentId },
+              $push: {
+                billingHistory: {
+                  $each: [{
+                    paymentId,
+                    type: "ai_reply_pack",
+                    aiReplies: aiReplyPack.aiReplies,
+                    amount: payment.amount / 100,
+                    currency: payment.currency,
+                    processedAt: payment.created_at
+                      ? new Date(payment.created_at * 1000)
+                      : new Date()
+                  }],
+                  $slice: -20
+                }
+              }
+            }
+          );
+
+          if (!result.matchedCount) {
+            if (
+              await User.exists({ _id: userId, processedPaymentIds: paymentId }) ||
+              await User.exists({ _id: userId, lastPaymentId: paymentId })
+            ) {
+              return res.json({ status: "already processed" });
+            }
+            return res.status(404).json({ message: "User not found" });
+          }
+
+          console.log(
+            `Added ${aiReplyPack.aiReplies} AI reply credits to user ${userId}`
+          );
+        } else {
+          if (payment.notes?.product && payment.notes.product !== "plan") {
+            return res.status(400).json({ message: "Invalid payment product." });
+          }
+          const plan = payment.notes?.plan;
+          if (!["starter", "pro", "agent"].includes(plan)) {
+            return res.status(400).json({ message: "Missing payment notes" });
+          }
+
+          if (payment.amount !== PLAN_LIMITS[plan].price * 100) {
+            return res.status(400).json({
+              message: "Payment amount does not match the selected plan"
+            });
+          }
+
+          let planExpiresAt;
+          let planUpdated = false;
+          for (let attempt = 0; attempt < 5; attempt += 1) {
+            const currentUser = attempt === 0
+              ? user
+              : await User.findOne({ _id: userId, role: "user" })
+                .select("+processedPaymentIds");
+            if (!currentUser) {
+              return res.status(404).json({ message: "User not found" });
+            }
+            if (
+              currentUser.lastPaymentId === paymentId ||
+              currentUser.processedPaymentIds.includes(paymentId)
+            ) {
+              return res.json({ status: "already processed" });
+            }
+
+            planExpiresAt = extendPlan(currentUser.planExpiresAt, 30);
+            const result = await User.updateOne(
+              {
+                _id: userId,
+                role: "user",
+                planExpiresAt: currentUser.planExpiresAt || null,
+                processedPaymentIds: { $ne: paymentId }
+              },
+              {
+                $set: {
+                  plan,
+                  planExpiresAt,
+                  lastPaymentId: paymentId,
+                  isSuspended: false
+                },
+                $addToSet: { processedPaymentIds: paymentId },
+                $push: {
+                  billingHistory: {
+                    $each: [{
+                      paymentId,
+                      type: "plan",
+                      plan,
+                      amount: payment.amount / 100,
+                      currency: payment.currency,
+                      processedAt: payment.created_at
+                        ? new Date(payment.created_at * 1000)
+                        : new Date()
+                    }],
+                    $slice: -20
+                  }
+                }
+              }
+            );
+            if (result.matchedCount) {
+              planUpdated = true;
+              break;
+            }
+          }
+
+          if (!planUpdated) {
+            if (
+              await User.exists({ _id: userId, processedPaymentIds: paymentId }) ||
+              await User.exists({ _id: userId, lastPaymentId: paymentId })
+            ) {
+              return res.json({ status: "already processed" });
+            }
+            throw new Error("Could not apply plan payment after concurrent updates.");
+          }
+
+          console.log(
+            `✅ User ${user.email} upgraded to ${plan} till ${planExpiresAt}`
+          );
         }
-        user.plan = plan;
-        const daysToAdd = 30;
-
-        // 📅 7. Extend plan expiry
-        user.planExpiresAt = extendPlan(user.planExpiresAt, daysToAdd);
-
-        // 🔓 8. Unsuspend user (if suspended)
-        user.isSuspended = false;
-
-        await user.save();
-
-        console.log(
-          `✅ User ${user.email} upgraded to ${user.plan} till ${user.planExpiresAt}`
-        );
       }
 
-      // ✅ 9. Acknowledge webhook
       res.json({ status: "ok" });
     } catch (error) {
       console.error("Webhook error:", error);

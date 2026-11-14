@@ -5,6 +5,7 @@ const Lead = require("../models/Lead");
 const User = require("../models/User");
 const PLAN_LIMITS = require("../config/PlanLimits");
 const { hasPlanFeature } = require("../utils/planEntitlements");
+const { qualifyLeadForWorkspace } = require("../services/leadQualificationService");
 const sendWhatsAppMessage = require("../utils/whatsappSender");
 const facebookLeadAdsService = require("../services/facebookLeadAds.service");
 
@@ -100,13 +101,14 @@ if (lead && text && !alreadyRecorded) {
     content: text,
     providerMessageId: message.id
   });
-
-  await lead.save();
 }
 
       if (lead) {
         lead.replied = true;
         lead.status = "interested";
+        if (!alreadyRecorded) {
+          await qualifyLeadForWorkspace(lead, user);
+        }
         await lead.save();
 
         console.log("🛑 Automation stopped for", lead.name);
@@ -156,7 +158,8 @@ if (
   lead &&
   lead.requirement &&
   lead.budget &&
-  lead.timeline
+  lead.timeline &&
+  !hasPlanFeature(user.plan, "aiLeadQualification")
 ) {
   lead.aiLeadTemperature = "hot";
   await lead.save();
@@ -172,7 +175,8 @@ if (
     lowerText.includes("call me") ||
     lowerText.includes("interested") ||
     lowerText.includes("book demo")
-  )
+  ) &&
+  !hasPlanFeature(user?.plan, "aiLeadQualification")
 ) {
   lead.aiLeadTemperature = "hot";
   await lead.save();

@@ -438,6 +438,10 @@ if (data.planExpiringSoon) {
     if (teamBtn) {
       teamBtn.hidden = !workspace.isOwner && !data.user.workspaceOwner;
     }
+    const billingBtn = document.getElementById("billingBtn");
+    if (billingBtn) {
+      billingBtn.hidden = !workspace.isOwner;
+    }
 const businessName =
 data?.user?.businessName || "";
 
@@ -512,18 +516,15 @@ knowledgeBase
 const upgradeContainer = document.getElementById("upgradeBtnContainer");
 
 if (upgradeContainer) {
-  if (
-  plan.toLowerCase() !== "pro" &&
-  plan.toLowerCase() !== "agent"
-) {
+  if (workspace.isOwner) {
     upgradeContainer.innerHTML = `
       <button class="btn btn-outline"
         onclick="window.location.href='/pricing.html'">
-        View plans
+        ${plan === "free" ? "View plans" : "Renew / change plan"}
       </button>
     `;
   } else {
-    upgradeContainer.innerHTML = ""; // hide if pro
+    upgradeContainer.innerHTML = "";
   }
 }
 
@@ -541,6 +542,7 @@ ${data.user.planExpiresAt
 
 🤖 AI Replies:
 ${usage.aiRepliesUsed || 0}/${usage.aiRepliesLimit || 0}
+${usage.aiReplyCreditsRemaining ? `<br>➕ Top-up credits: ${usage.aiReplyCreditsRemaining}` : ""}
 
 <br>
 
@@ -551,6 +553,9 @@ ${usage.aiQualificationUsed || 0}/${usage.aiQualificationLimit}<br>` : ""}
 
 📲 Follow-ups:
 ${usage.followUpsUsed || 0}/${usage.followUpsLimit || 0}
+${workspace.isOwner && ["starter", "pro", "agent"].includes(plan)
+  ? `<br><button type="button" class="btn btn-outline" style="margin-top:8px" onclick="window.location.href='/payment.html?product=ai-reply-pack'">Buy 100 AI reply credits · ₹99</button>`
+  : ""}
 `;
 
     // Keep quick actions aligned with each plan's feature access.
@@ -932,8 +937,9 @@ tr.className = followupRowClass(l.nextFollowUpAt);
       )}
 ${["pro", "agent"].includes(currentUserPlan) ? `
 <div style="margin-top:6px;font-size:12px;">
-  🧠 ${escapeHtml(l.aiLeadTemperature || "cold")} • 🎯 ${l.aiScore || 0}/100
-  <br>${escapeHtml(l.aiNextAction || "")}
+  🧠 ${escapeHtml(l.aiLeadTemperature || "cold")} • 🎯 ${l.aiScore || 0}/100 • ${escapeHtml(l.aiSentiment || "neutral")}
+  <br>${escapeHtml(l.aiSummary || "")}
+  <br>Next: ${escapeHtml(l.aiNextAction || "")}
 </div>
 ` : ""}
     </span>
@@ -1032,7 +1038,11 @@ document.getElementById("addLeadForm").addEventListener("submit", async (e) => {
 
     showToast({
   title: "✅ Lead Added",
-  message: "New lead saved successfully.",
+  message: data.qualificationStatus === "unavailable"
+    ? "Lead saved, but AI scoring could not run. Try again later."
+    : data.qualificationStatus === "limit_reached"
+      ? "Lead saved. Your monthly AI qualification limit has been reached."
+      : "New lead saved successfully.",
   duration: 3500
 });
 
@@ -1308,7 +1318,11 @@ editingLeadId = null;
 
 showToast({
   title: "✏️ Lead Updated",
-  message: "Changes saved successfully.",
+  message: data.qualificationStatus === "unavailable"
+    ? "Changes saved, but AI scoring could not run. Try again later."
+    : data.qualificationStatus === "limit_reached"
+      ? "Changes saved. Your monthly AI qualification limit has been reached."
+      : "Changes saved successfully.",
   duration: 3500
 });
 
