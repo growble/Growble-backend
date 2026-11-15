@@ -1,7 +1,7 @@
 const PLAN_LIMITS = require("../config/PlanLimits");
 const User = require("../models/User");
 
-const USAGE_FIELDS = ["aiReplies", "aiQualification", "followUps"];
+const USAGE_FIELDS = ["leadImports", "aiReplies", "aiQualification", "followUps"];
 
 function resetMonthlyUsage(user, now = new Date()) {
   if (!user.automationUsage) {
@@ -74,8 +74,76 @@ async function recordPlanUsage(user, feature) {
   await user.save();
 }
 
+async function reservePlanUsage(user, feature, amount) {
+  if (!Number.isInteger(amount) || amount <= 0) {
+    throw new Error("Usage reservation must be a positive whole number.");
+  }
+
+  if (resetMonthlyUsage(user)) {
+    await user.save();
+  }
+
+  const limit = PLAN_LIMITS[user.plan]?.[feature] || 0;
+  const used = user.automationUsage?.usage?.[feature] || 0;
+  const resetAt = user.automationUsage.usage.resetAt;
+  if (used + amount > limit) {
+    const error = new Error(`Monthly ${feature} limit reached`);
+    error.code = "PLAN_USAGE_LIMIT";
+    throw error;
+  }
+
+  const usagePath = `automationUsage.usage.${feature}`;
+  const usageConditions = [{ [usagePath]: { $lte: limit - amount } }];
+  if (used === 0) {
+    usageConditions.push({ [usagePath]: { $exists: false } });
+  }
+
+  const updatedUser = await User.findOneAndUpdate(
+    {
+      _id: user._id,
+      plan: user.plan,
+      "automationUsage.usage.resetAt": resetAt,
+      $or: usageConditions
+    },
+    { $inc: { [usagePath]: amount } },
+    { new: true, projection: { [usagePath]: 1 } }
+  );
+  if (!updatedUser) {
+    const error = new Error(`Monthly ${feature} limit reached`);
+    error.code = "PLAN_USAGE_LIMIT";
+    throw error;
+  }
+
+  return {
+    userId: user._id,
+    feature,
+    count: amount,
+    resetAt,
+    used: updatedUser.automationUsage.usage[feature],
+    limit
+  };
+}
+
+async function releasePlanUsage(reservation, amount) {
+  if (!Number.isInteger(amount) || amount <= 0) return;
+
+  const usagePath = `automationUsage.usage.${reservation.feature}`;
+  const result = await User.updateOne(
+    {
+      _id: reservation.userId,
+      "automationUsage.usage.resetAt": reservation.resetAt
+    },
+    { $inc: { [usagePath]: -amount } }
+  );
+  if (result.matchedCount !== 1) {
+    throw new Error("Could not release unused monthly usage reservation.");
+  }
+}
+
 module.exports = {
   hasRemainingUsage,
   recordPlanUsage,
-  resetMonthlyUsage
+  resetMonthlyUsage,
+  reservePlanUsage,
+  releasePlanUsage
 };

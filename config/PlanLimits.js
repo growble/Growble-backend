@@ -2,6 +2,7 @@ module.exports = {
 
   free: {
     price: 0,
+    leadImports: 100,
     followUps: 50,
     aiReplies: 0,
     aiQualification: 0,
@@ -19,6 +20,7 @@ module.exports = {
 
   starter: {
     price: 499,
+    leadImports: 1000,
     followUps: 2000,
     aiReplies: 100,
     aiQualification: 0,
@@ -36,6 +38,7 @@ module.exports = {
 
   pro: {
     price: 999,
+    leadImports: 5000,
     followUps: 10000,
     aiReplies: 2000,
     aiQualification: 500,
@@ -53,6 +56,7 @@ module.exports = {
 
   agent: {
     price: 1499,
+    leadImports: 15000,
     followUps: 30000,
     aiReplies: 10000,
     aiQualification: 5000,

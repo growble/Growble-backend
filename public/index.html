@@ -426,6 +426,7 @@ height:56px;
           onclick="window.location.href='/billing.html'" hidden>Billing</button>
         <button type="button" class="btn btn-outline" id="teamBtn"
           onclick="window.location.href='/team.html'" hidden>Team</button>
+        <button type="button" class="btn btn-outline" id="importLeadsBtn">Import Leads</button>
         <button type="button" class="btn btn-primary" id="addLeadBtn">+ Add Lead</button>
         <button class="btn btn-danger" id="logoutBtn">Logout</button>
       </div>
@@ -664,6 +665,21 @@ Loading AI...
 
       </div>
 
+    </div>
+  </div>
+
+  <div id="importLeadsModal" class="modal hidden">
+    <div class="modal-box" style="width:min(520px,calc(100vw - 32px));">
+      <h2 style="margin-bottom:8px;">Import Leads</h2>
+      <p class="small">Upload a CSV, Excel (.xlsx), or JSON file. Include name and phone columns; optional status values such as new or contacted are imported automatically.</p>
+      <p id="leadImportUsage" class="small" style="margin-top:10px;">Loading monthly import usage...</p>
+      <form id="importLeadsForm">
+        <input type="file" id="leadImportFile" accept=".csv,.xlsx,.json" required />
+        <div class="modal-actions">
+          <button type="submit" class="btn btn-primary" id="importLeadsSubmit">Upload Leads</button>
+          <button type="button" class="btn btn-danger" id="closeImportLeads">Cancel</button>
+        </div>
+      </form>
     </div>
   </div>
 

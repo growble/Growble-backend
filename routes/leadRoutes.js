@@ -1,5 +1,6 @@
 const express = require("express");
 const router = express.Router();
+const multer = require("multer");
 
 const Lead = require("../models/Lead");
 const auth = require("../middleware/authMiddleware");
@@ -7,14 +8,29 @@ const handleLeadAutomation = require("../services/automationService");
 const sendWhatsAppMessage = require("../utils/whatsappSender");
 const generateMessage = require("../utils/aiMessage");
 const PLAN_LIMITS = require("../config/PlanLimits");
-const { hasPlanFeature } = require("../utils/planEntitlements");
+const { getPlanLimits, hasPlanFeature } = require("../utils/planEntitlements");
 const { qualifyLeadForWorkspace } = require("../services/leadQualificationService");
 const { getWorkspaceLeadQuery, getWorkspaceOwnerId } = require("../utils/workspace");
+const { parseLeadUpload } = require("../services/leadImportService");
 const {
   hasRemainingUsage,
   recordPlanUsage,
-  resetMonthlyUsage
+  resetMonthlyUsage,
+  reservePlanUsage,
+  releasePlanUsage
 } = require("../utils/planUsage");
+
+const MAX_IMPORT_FILE_SIZE = 5 * 1024 * 1024;
+const leadUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: MAX_IMPORT_FILE_SIZE },
+  fileFilter: (req, file, callback) => {
+    if (!/\.(csv|xlsx|json)$/i.test(file.originalname)) {
+      return callback(new Error("Upload a CSV, XLSX, or JSON file."));
+    }
+    callback(null, true);
+  }
+});
 function presentLead(lead, plan) {
   const result = lead.toObject();
   if (!hasPlanFeature(plan, "advancedAnalytics")) {
@@ -88,6 +104,178 @@ await lead.save();
 res.status(500).json({
   message: "Server error",
 });
+  }
+});
+
+router.post("/import", auth, (req, res, next) => {
+  leadUpload.single("file")(req, res, error => {
+    if (!error) return next();
+    if (error instanceof multer.MulterError && error.code === "LIMIT_FILE_SIZE") {
+      return res.status(413).json({ message: "Lead files must be 5 MB or smaller." });
+    }
+    return res.status(400).json({ message: error.message || "Invalid lead file." });
+  });
+}, async (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ message: "Choose a CSV, XLSX, or JSON file." });
+  }
+
+  try {
+    const records = await parseLeadUpload(req.file);
+    const invalidRows = records
+      .filter(record => record.errors.length)
+      .map(record => ({
+        row: record.rowNumber,
+        errors: record.errors
+      }));
+    const eligibleRecords = records.filter(record => !record.errors.length);
+    const phones = eligibleRecords.map(record => record.lead.phone);
+    const existingLeads = phones.length
+      ? await Lead.find({
+          $and: [
+            getWorkspaceLeadQuery(req.user),
+            { phone: { $in: phones } }
+          ]
+        }).select("phone")
+      : [];
+    const existingPhones = new Set(existingLeads.map(lead => lead.phone));
+    const seenPhones = new Set();
+    const candidates = [];
+    let skippedDuplicates = 0;
+
+    for (const record of eligibleRecords) {
+      const phone = record.lead.phone;
+      if (existingPhones.has(phone) || seenPhones.has(phone)) {
+        skippedDuplicates += 1;
+      } else {
+        seenPhones.add(phone);
+        candidates.push(record);
+      }
+    }
+
+    const owner = req.workspaceOwner;
+    if (resetMonthlyUsage(owner)) {
+      await owner.save();
+    }
+    const limit = getPlanLimits(owner.plan).leadImports;
+    const used = owner.automationUsage?.usage?.leadImports || 0;
+    const remaining = Math.max(0, limit - used);
+    const acceptedRecords = candidates.slice(0, remaining);
+    const skippedByLimit = candidates.length - acceptedRecords.length;
+
+    if (candidates.length && !acceptedRecords.length) {
+      return res.status(429).json({
+        message: "Your monthly lead import limit has been reached.",
+        imported: 0,
+        used,
+        limit,
+        remaining: 0
+      });
+    }
+
+    if (!acceptedRecords.length) {
+      return res.json({
+        message: "No new leads were available to import.",
+        imported: 0,
+        skippedDuplicates,
+        invalidRows: invalidRows.length,
+        issues: invalidRows.slice(0, 20),
+        skippedByLimit,
+        used,
+        limit,
+        remaining
+      });
+    }
+
+    let reservation;
+    try {
+      reservation = await reservePlanUsage(owner, "leadImports", acceptedRecords.length);
+    } catch (error) {
+      if (error.code === "PLAN_USAGE_LIMIT") {
+        return res.status(429).json({
+          message: "Your monthly lead import limit has been reached. Please try again after usage resets.",
+          used,
+          limit,
+          remaining: Math.max(0, limit - used)
+        });
+      }
+      throw error;
+    }
+
+    const leadDocuments = acceptedRecords.map(record => ({
+      ...record.lead,
+      user: req.user._id,
+      workspaceOwner: getWorkspaceOwnerId(req.user)
+    }));
+    let imported = 0;
+    let duplicateWriteErrors = 0;
+    let failedRows = 0;
+    const writeIssues = [];
+    let importedStatusDefaulted = acceptedRecords
+      .filter(record => record.statusDefaulted).length;
+
+    try {
+      const insertedLeads = await Lead.insertMany(leadDocuments, { ordered: false });
+      imported = insertedLeads.length;
+    } catch (error) {
+      const hasBulkWriteDetails =
+        Array.isArray(error.insertedDocs) || Array.isArray(error.writeErrors);
+      if (!hasBulkWriteDetails) {
+        await releasePlanUsage(reservation, reservation.count);
+        throw error;
+      }
+
+      imported = Array.isArray(error.insertedDocs)
+        ? error.insertedDocs.length
+        : Number(error.result?.insertedCount || error.result?.result?.nInserted || 0);
+      if (Array.isArray(error.insertedDocs)) {
+        const insertedPhones = new Set(error.insertedDocs.map(lead => lead.phone));
+        importedStatusDefaulted = acceptedRecords.filter(record =>
+          record.statusDefaulted && insertedPhones.has(record.lead.phone)
+        ).length;
+      } else if (Array.isArray(error.writeErrors)) {
+        const failedIndexes = new Set(error.writeErrors.map(writeError => writeError.index));
+        importedStatusDefaulted = acceptedRecords.filter((record, index) =>
+          record.statusDefaulted && !failedIndexes.has(index)
+        ).length;
+      }
+      duplicateWriteErrors = (error.writeErrors || [])
+        .filter(writeError => writeError.code === 11000).length;
+      failedRows = Math.max(0, acceptedRecords.length - imported - duplicateWriteErrors);
+      writeIssues.push(...(error.writeErrors || [])
+        .filter(writeError => writeError.code !== 11000)
+        .map(writeError => ({
+          row: acceptedRecords[writeError.index]?.rowNumber,
+          errors: ["Could not import this row."]
+        })));
+      console.error("Partial lead import error:", error);
+    }
+
+    const unusedReservation = reservation.count - imported;
+    if (unusedReservation > 0) {
+      await releasePlanUsage(reservation, unusedReservation);
+    }
+
+    const currentUsed = used + imported;
+    res.status(201).json({
+      message: `${imported} lead(s) imported.`,
+      imported,
+      skippedDuplicates: skippedDuplicates + duplicateWriteErrors,
+      invalidRows: invalidRows.length,
+      failedRows,
+      issues: invalidRows.concat(writeIssues).slice(0, 20),
+      skippedByLimit,
+      statusesDefaulted: importedStatusDefaulted,
+      used: currentUsed,
+      limit,
+      remaining: Math.max(0, limit - currentUsed)
+    });
+  } catch (error) {
+    if (error.statusCode) {
+      return res.status(error.statusCode).json({ message: error.message });
+    }
+    console.error("Import leads error:", error);
+    res.status(500).json({ message: "Could not import leads." });
   }
 });
 

@@ -54,6 +54,8 @@ router.get("/me", auth, async (req, res) => {
       planExpired: req.planExpired || false,
       planExpiringSoon: req.planExpiringSoon || null,
       usage: {
+        leadImportsUsed: usage.leadImports || 0,
+        leadImportsLimit: limits.leadImports,
         aiRepliesUsed: usage.aiReplies,
         aiRepliesLimit: limits.aiReplies,
         followUpsUsed: usage.followUps,

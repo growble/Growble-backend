@@ -25,6 +25,7 @@ document.getElementById("logoutBtn").addEventListener("click", () => {
 // MODAL open/close (index.html modal ids)
 // =====================
 const modal = document.getElementById("addLeadModal");
+const importLeadsModal = document.getElementById("importLeadsModal");
 const editModal = document.getElementById("editLeadModal");
 const lostReasonModal = document.getElementById("lostReasonModal");
 const lostReasonSelect = document.getElementById("lostReasonSelect");
@@ -44,6 +45,13 @@ let deletingLeadId = null;
 
 document.getElementById("addLeadBtn").addEventListener("click", () => {
   modal.classList.remove("hidden");
+});
+
+document.getElementById("importLeadsBtn").addEventListener("click", () => {
+  importLeadsModal.classList.remove("hidden");
+});
+document.getElementById("closeImportLeads").addEventListener("click", () => {
+  importLeadsModal.classList.add("hidden");
 });
 
 document.getElementById("closeLeadModal").addEventListener("click", () => {
@@ -114,6 +122,7 @@ let leads = [];
 let editingLeadId = null;
 let currentUserPlan = null;
 let pendingLostUpdate = false;
+let leadImportUsage = { used: 0, limit: 0 };
 
 // =====================
 // HELPERS
@@ -126,6 +135,14 @@ function escapeHtml(str) {
     '"': "&quot;",
     "'": "&#039;",
   }[m]));
+}
+
+function updateLeadImportUsage() {
+  const usageLabel = document.getElementById("leadImportUsage");
+  if (!usageLabel) return;
+  const remaining = Math.max(0, leadImportUsage.limit - leadImportUsage.used);
+  usageLabel.textContent =
+    `${leadImportUsage.used}/${leadImportUsage.limit} leads imported this month · ${remaining} remaining`;
 }
 
 function formatDate(dateStr) {
@@ -408,6 +425,11 @@ async function loadUser() {
     const data = await res.json();
 const usage =
 data.usage || {};
+leadImportUsage = {
+  used: usage.leadImportsUsed || 0,
+  limit: usage.leadImportsLimit || 0
+};
+updateLeadImportUsage();
 
 console.log(
 "Usage:",
@@ -549,6 +571,10 @@ ${usage.aiReplyCreditsRemaining ? `<br>➕ Top-up credits: ${usage.aiReplyCredit
 ${usage.aiQualificationLimit ? `🎯 AI Qualification:
 ${usage.aiQualificationUsed || 0}/${usage.aiQualificationLimit}<br>` : ""}
 
+<br>
+
+📥 Lead imports:
+${usage.leadImportsUsed || 0}/${usage.leadImportsLimit || 0}
 <br>
 
 📲 Follow-ups:
@@ -1058,6 +1084,81 @@ await loadLeads();
   message: "Something went wrong on server",
   duration: 4500
 });
+  }
+});
+
+document.getElementById("importLeadsForm").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const fileInput = document.getElementById("leadImportFile");
+  const submitButton = document.getElementById("importLeadsSubmit");
+  const file = fileInput.files[0];
+  if (!file) return;
+
+  const formData = new FormData();
+  formData.append("file", file);
+  submitButton.disabled = true;
+  submitButton.textContent = "Uploading...";
+
+  try {
+    const response = await fetch("/api/leads/import", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body: formData
+    });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      if (result.used !== undefined && result.limit !== undefined) {
+        leadImportUsage = { used: result.used, limit: result.limit };
+        updateLeadImportUsage();
+      }
+      showToast({
+        title: "❌ Import failed",
+        message: result.message || "Could not import leads.",
+        duration: 5000
+      });
+      return;
+    }
+
+    const summary = [
+      `${result.imported || 0} imported`,
+      `${result.skippedDuplicates || 0} duplicates skipped`,
+      `${result.invalidRows || 0} invalid rows`
+    ];
+    if (result.skippedByLimit) {
+      summary.push(`${result.skippedByLimit} skipped because the monthly limit was reached`);
+    }
+    if (result.failedRows) {
+      summary.push(`${result.failedRows} failed while saving`);
+    }
+    if (result.statusesDefaulted) {
+      summary.push(`${result.statusesDefaulted} status value(s) not recognized; set to New`);
+    }
+    const rowIssues = (result.issues || []).slice(0, 3).map(issue =>
+      `Row ${issue.row}: ${issue.errors.join(", ")}`
+    );
+    showToast({
+      title: "✅ Lead import complete",
+      message: summary.join(" · ") + (rowIssues.length ? `\n${rowIssues.join("\n")}` : ""),
+      duration: 6000
+    });
+    importLeadsModal.classList.add("hidden");
+    document.getElementById("importLeadsForm").reset();
+    leadImportUsage = {
+      used: result.used || 0,
+      limit: result.limit || 0
+    };
+    updateLeadImportUsage();
+    await Promise.all([loadLeads(), loadUser()]);
+  } catch (error) {
+    console.error("Lead import error:", error);
+    showToast({
+      title: "❌ Import failed",
+      message: "A server error occurred while importing leads.",
+      duration: 5000
+    });
+  } finally {
+    submitButton.disabled = false;
+    submitButton.textContent = "Upload Leads";
   }
 });
 

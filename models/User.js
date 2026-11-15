@@ -107,6 +107,11 @@ supportAssistantUsage: {
 
     automationUsage: {
 usage: {
+  leadImports: {
+    type: Number,
+    default: 0
+  },
+
   aiReplies: {
     type: Number,
     default: 0
