@@ -8,7 +8,7 @@ const HEADER_FIELDS = {
   status: ["status", "leadstatus", "leadtype", "type"],
   notes: ["note", "notes", "description"],
   source: ["source", "leadsource"],
-  nextFollowUpAt: ["followupdate", "nextfollowup", "nextfollowupat"]
+  nextFollowUpAt: ["followupdate", "nextfollowupdate", "nextfollowup", "nextfollowupat"]
 };
 const VALID_STATUSES = new Set(["new", "contacted", "interested", "closed", "lost"]);
 const VALID_SOURCES = new Set(["website", "whatsapp", "facebook", "manual", "other"]);
@@ -120,6 +120,39 @@ function text(value) {
   return String(value).trim();
 }
 
+function parseFollowUpDate(value) {
+  if (value instanceof Date) {
+    if (Number.isNaN(value.getTime())) return value;
+    return new Date(Date.UTC(
+      value.getUTCFullYear(),
+      value.getUTCMonth(),
+      value.getUTCDate()
+    ));
+  }
+
+  const rawValue = text(value);
+  const dateOnly = rawValue.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/);
+  if (dateOnly) {
+    const first = Number(dateOnly[1]);
+    const second = Number(dateOnly[2]);
+    const year = Number(dateOnly[3]);
+    const dayFirst = first > 12 || second <= 12;
+    const month = dayFirst ? second : first;
+    const day = dayFirst ? first : second;
+    const parsedDate = new Date(Date.UTC(year, month - 1, day));
+    if (
+      parsedDate.getUTCFullYear() !== year ||
+      parsedDate.getUTCMonth() !== month - 1 ||
+      parsedDate.getUTCDate() !== day
+    ) {
+      return new Date(Number.NaN);
+    }
+    return parsedDate;
+  }
+
+  return new Date(rawValue);
+}
+
 function normalizeStatus(value) {
   const rawStatus = text(value).toLowerCase().replace(/[\s-]+/g, "_");
   if (!rawStatus) return { status: "new", defaulted: false };
@@ -152,7 +185,7 @@ function normalizeLead(record, rowNumber) {
 
   let nextFollowUpAt = null;
   if (text(followUpValue)) {
-    nextFollowUpAt = new Date(followUpValue);
+    nextFollowUpAt = parseFollowUpDate(followUpValue);
     if (Number.isNaN(nextFollowUpAt.getTime())) {
       errors.push("Follow-up date is invalid.");
     }

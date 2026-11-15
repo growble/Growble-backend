@@ -27,6 +27,7 @@ document.getElementById("logoutBtn").addEventListener("click", () => {
 const modal = document.getElementById("addLeadModal");
 const importLeadsModal = document.getElementById("importLeadsModal");
 const editModal = document.getElementById("editLeadModal");
+const followUpDraftModal = document.getElementById("followUpDraftModal");
 const lostReasonModal = document.getElementById("lostReasonModal");
 const lostReasonSelect = document.getElementById("lostReasonSelect");
 const confirmLostBtn = document.getElementById("confirmLostBtn");
@@ -41,6 +42,7 @@ const confirmDeleteBtn = document.getElementById("confirmDeleteBtn");
 const cancelDeleteBtn = document.getElementById("cancelDeleteBtn");
 
 let deletingLeadId = null;
+let generatedFollowUpLeadId = null;
 
 
 document.getElementById("addLeadBtn").addEventListener("click", () => {
@@ -60,6 +62,31 @@ document.getElementById("closeLeadModal").addEventListener("click", () => {
 
 document.getElementById("closeEditModal").addEventListener("click", () => {
   editModal.classList.add("hidden");
+});
+document.getElementById("closeFollowUpDraft").addEventListener("click", () => {
+  generatedFollowUpLeadId = null;
+  followUpDraftModal.classList.add("hidden");
+});
+document.getElementById("openFollowUpInWhatsApp").addEventListener("click", () => {
+  const lead = leads.find(item => item._id === generatedFollowUpLeadId);
+  const message = document.getElementById("followUpDraftText").value.trim();
+  const phone = (lead?.phone || "").replace(/\D/g, "");
+  if (!phone || !message) {
+    showToast({
+      title: "⚠ Check the draft",
+      message: "A valid lead phone number and a message are required.",
+      duration: 4000
+    });
+    return;
+  }
+
+  window.open(
+    `https://wa.me/${phone}?text=${encodeURIComponent(message)}`,
+    "_blank",
+    "noopener,noreferrer"
+  );
+  generatedFollowUpLeadId = null;
+  followUpDraftModal.classList.add("hidden");
 });
 cancelDeleteBtn.addEventListener("click", () => {
   deletingLeadId = null;
@@ -310,6 +337,47 @@ window.sendWhatsApp = async function sendWhatsApp(id) {
       window.__whatsappOpening = false;
     }, 1000);
 
+  }
+};
+
+window.generateLeadFollowUp = async function generateLeadFollowUp(id, button) {
+  const lead = leads.find(item => item._id === id);
+  const phone = (lead?.phone || "").replace(/\D/g, "");
+  if (!lead || !phone) {
+    showToast({
+      title: "⚠ Invalid Phone",
+      message: "This lead does not have a valid phone number.",
+      duration: 4000
+    });
+    return;
+  }
+
+  const originalButtonText = button.textContent;
+  button.disabled = true;
+  button.textContent = "Generating...";
+  try {
+    const response = await fetch(`/api/leads/${id}/generate-followup`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(result.message || "Could not generate a follow-up draft.");
+    }
+
+    generatedFollowUpLeadId = id;
+    document.getElementById("followUpDraftText").value = result.message;
+    followUpDraftModal.classList.remove("hidden");
+    await loadUser();
+  } catch (error) {
+    showToast({
+      title: "❌ Draft generation failed",
+      message: error.message || "Could not generate a follow-up draft.",
+      duration: 5000
+    });
+  } finally {
+    button.disabled = false;
+    button.textContent = originalButtonText;
   }
 };
 
@@ -983,25 +1051,17 @@ ${["pro", "agent"].includes(currentUserPlan) ? `
       Edit
     </button>
 
-    ${
-      ["starter", "pro", "agent"].includes(currentUserPlan)
-      ? `
-      <button type="button" class="btn btn-primary"
-  onclick="event.stopPropagation(); sendWhatsApp('${l._id}')">
-  WhatsApp
-</button>
-      `
-      : `
-      <button class="btn btn-outline"
-        onclick="showToast({
-          title:'🔒 Starter Feature',
-          message:'WhatsApp messaging is available on paid plans.',
-          duration:4000
-        })">
-        WhatsApp 🔒
-      </button>
-      `
-    }
+    <button type="button" class="btn btn-primary"
+      onclick="event.stopPropagation(); sendWhatsApp('${l._id}')">
+      WhatsApp
+    </button>
+
+    ${["starter", "pro", "agent"].includes(currentUserPlan) ? `
+    <button type="button" class="btn btn-outline"
+      onclick="event.stopPropagation(); generateLeadFollowUp('${l._id}', this)">
+      Generate follow-up
+    </button>
+    ` : ""}
 
     <button class="btn btn-danger"
       onclick="deleteLead('${l._id}')">
@@ -1113,7 +1173,8 @@ document.getElementById("importLeadsForm").addEventListener("submit", async (eve
       }
       showToast({
         title: "❌ Import failed",
-        message: result.message || "Could not import leads.",
+        message: (result.message || "Could not import leads.") +
+          (result.updatedFollowUps ? ` ${result.updatedFollowUps} follow-up date(s) updated.` : ""),
         duration: 5000
       });
       return;
@@ -1124,6 +1185,9 @@ document.getElementById("importLeadsForm").addEventListener("submit", async (eve
       `${result.skippedDuplicates || 0} duplicates skipped`,
       `${result.invalidRows || 0} invalid rows`
     ];
+    if (result.updatedFollowUps) {
+      summary.push(`${result.updatedFollowUps} follow-up date(s) updated`);
+    }
     if (result.skippedByLimit) {
       summary.push(`${result.skippedByLimit} skipped because the monthly limit was reached`);
     }

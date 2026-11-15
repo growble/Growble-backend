@@ -671,7 +671,7 @@ Loading AI...
   <div id="importLeadsModal" class="modal hidden">
     <div class="modal-box" style="width:min(520px,calc(100vw - 32px));">
       <h2 style="margin-bottom:8px;">Import Leads</h2>
-      <p class="small">Upload a CSV, Excel (.xlsx), or JSON file. Include name and phone columns; optional status values such as new or contacted are imported automatically.</p>
+      <p class="small">Upload a CSV, Excel (.xlsx), or JSON file. Include name and phone columns; optional status and next follow-up date columns are imported automatically. Use YYYY-MM-DD or DD/MM/YYYY for dates.</p>
       <p id="leadImportUsage" class="small" style="margin-top:10px;">Loading monthly import usage...</p>
       <form id="importLeadsForm">
         <input type="file" id="leadImportFile" accept=".csv,.xlsx,.json" required />
@@ -680,6 +680,18 @@ Loading AI...
           <button type="button" class="btn btn-danger" id="closeImportLeads">Cancel</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <div id="followUpDraftModal" class="modal hidden">
+    <div class="modal-box" style="width:min(520px,calc(100vw - 32px));">
+      <h2 style="margin-bottom:8px;">AI follow-up draft</h2>
+      <p class="small">Generated from this lead's details and recent conversation. Review or edit it before opening WhatsApp.</p>
+      <textarea id="followUpDraftText" maxlength="1000" rows="6" aria-label="WhatsApp follow-up draft"></textarea>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-primary" id="openFollowUpInWhatsApp">Open WhatsApp</button>
+        <button type="button" class="btn btn-danger" id="closeFollowUpDraft">Cancel</button>
+      </div>
     </div>
   </div>
 

@@ -49,6 +49,28 @@ test("JSON import accepts canonical fields and defaults unknown statuses to new"
   assert.deepEqual(rows[2].errors, ["Phone is required."]);
 });
 
+test("CSV import reads a next follow-up date column", async () => {
+  const rows = await parseLeadUpload(upload(
+    "leads.csv",
+    "Name,Phone,Next Follow-up Date\nAvery,5551234567,2030-05-06"
+  ));
+
+  assert.equal(rows[0].errors.length, 0);
+  assert.equal(rows[0].lead.nextFollowUpAt.toISOString(), "2030-05-06T00:00:00.000Z");
+});
+
+test("CSV import preserves the calendar day in day-first and month-first dates", async () => {
+  const rows = await parseLeadUpload(upload(
+    "leads.csv",
+    "Name,Phone,Next Follow-up Date\n" +
+      "Avery,5551234567,15/11/2030\n" +
+      "Jordan,5557654321,11/15/2030"
+  ));
+
+  assert.equal(rows[0].lead.nextFollowUpAt.toISOString(), "2030-11-15T00:00:00.000Z");
+  assert.equal(rows[1].lead.nextFollowUpAt.toISOString(), "2030-11-15T00:00:00.000Z");
+});
+
 test("CSV import rejects files without required name and phone columns", async () => {
   await assert.rejects(
     parseLeadUpload(upload("leads.csv", "Name,Email\nAvery,avery@example.com")),
