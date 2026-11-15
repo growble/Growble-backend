@@ -23,6 +23,8 @@ const {
 } = require("../utils/planUsage");
 
 const MAX_IMPORT_FILE_SIZE = 5 * 1024 * 1024;
+const MAX_BULK_LEADS = 500;
+const LEAD_STATUSES = new Set(["new", "contacted", "interested", "closed", "lost"]);
 const leadUpload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: MAX_IMPORT_FILE_SIZE },
@@ -33,6 +35,19 @@ const leadUpload = multer({
     callback(null, true);
   }
 });
+
+function parseBulkLeadIds(value) {
+  if (
+    !Array.isArray(value) ||
+    value.length === 0 ||
+    value.length > MAX_BULK_LEADS ||
+    value.some(id => typeof id !== "string" || !/^[a-f\d]{24}$/i.test(id))
+  ) {
+    return null;
+  }
+  return [...new Set(value)];
+}
+
 function presentLead(lead, plan) {
   const result = lead.toObject();
   if (!hasPlanFeature(plan, "advancedAnalytics")) {
@@ -350,6 +365,66 @@ router.get("/:id", auth, async (req, res) => {
   }
 });
  
+
+router.patch("/bulk-status", auth, async (req, res) => {
+  const ids = parseBulkLeadIds(req.body?.ids);
+  const status = req.body?.status;
+  if (!ids || !LEAD_STATUSES.has(status)) {
+    return res.status(400).json({
+      message: "Choose between 1 and 500 valid leads and a valid lead type."
+    });
+  }
+
+  try {
+    const result = await Lead.updateMany(
+      {
+        $and: [
+          getWorkspaceLeadQuery(req.user),
+          { _id: { $in: ids } }
+        ]
+      },
+      {
+        $set: { status, lostReason: null },
+        $push: { activityLog: { action: `Status changed to ${status}` } }
+      },
+      { runValidators: true }
+    );
+
+    res.json({
+      message: `${result.modifiedCount} lead(s) updated.`,
+      updated: result.modifiedCount
+    });
+  } catch (error) {
+    console.error("Bulk lead status update error:", error);
+    res.status(500).json({ message: "Could not update selected leads." });
+  }
+});
+
+router.delete("/bulk", auth, async (req, res) => {
+  const ids = parseBulkLeadIds(req.body?.ids);
+  if (!ids) {
+    return res.status(400).json({
+      message: "Choose between 1 and 500 valid leads to delete."
+    });
+  }
+
+  try {
+    const result = await Lead.deleteMany({
+      $and: [
+        getWorkspaceLeadQuery(req.user),
+        { _id: { $in: ids } }
+      ]
+    });
+
+    res.json({
+      message: `${result.deletedCount} lead(s) deleted.`,
+      deleted: result.deletedCount
+    });
+  } catch (error) {
+    console.error("Bulk lead delete error:", error);
+    res.status(500).json({ message: "Could not delete selected leads." });
+  }
+});
 
 
 /**

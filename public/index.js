@@ -42,7 +42,12 @@ const confirmDeleteBtn = document.getElementById("confirmDeleteBtn");
 const cancelDeleteBtn = document.getElementById("cancelDeleteBtn");
 
 let deletingLeadId = null;
+let deletingLeadIds = null;
 let generatedFollowUpLeadId = null;
+let selectedLeadIds = new Set();
+let visibleLeadIds = [];
+let bulkLeadOperation = false;
+const MAX_SELECTED_LEADS = 500;
 
 
 document.getElementById("addLeadBtn").addEventListener("click", () => {
@@ -90,16 +95,31 @@ document.getElementById("openFollowUpInWhatsApp").addEventListener("click", () =
 });
 cancelDeleteBtn.addEventListener("click", () => {
   deletingLeadId = null;
+  deletingLeadIds = null;
   deleteModal.classList.add("hidden");
+  confirmDeleteBtn.textContent = "🗑️ Yes, Delete";
 });
 confirmDeleteBtn.addEventListener("click", async () => {
-  if (!deletingLeadId) return;
+  const isBulkDelete = Array.isArray(deletingLeadIds) && deletingLeadIds.length > 0;
+  if (!deletingLeadId && !isBulkDelete) return;
+  const singleLeadId = deletingLeadId;
 
+  confirmDeleteBtn.disabled = true;
+  bulkLeadOperation = isBulkDelete;
+  updateBulkLeadControls();
   try {
-    const res = await fetch(`/api/leads/${deletingLeadId}`, {
+    const request = {
       method: "DELETE",
-      headers: { ["Authorization"]: "Bearer " + token }
-    });
+      headers: { Authorization: `Bearer ${token}` }
+    };
+    if (isBulkDelete) {
+      request.headers["Content-Type"] = "application/json";
+      request.body = JSON.stringify({ ids: deletingLeadIds });
+    }
+    const res = await fetch(
+      isBulkDelete ? "/api/leads/bulk" : `/api/leads/${deletingLeadId}`,
+      request
+    );
 
     const data = await res.json().catch(() => ({}));
 
@@ -114,10 +134,15 @@ confirmDeleteBtn.addEventListener("click", async () => {
 
     deleteModal.classList.add("hidden");
     deletingLeadId = null;
+    deletingLeadIds = null;
+    if (isBulkDelete) selectedLeadIds.clear();
+    else selectedLeadIds.delete(singleLeadId);
 
     showToast({
       title: "🗑️ Lead Deleted",
-      message: "Lead removed successfully.",
+      message: isBulkDelete
+        ? `${data.deleted || 0} selected lead(s) removed.`
+        : "Lead removed successfully.",
       duration: 3500
     });
 
@@ -129,7 +154,60 @@ confirmDeleteBtn.addEventListener("click", async () => {
       message: "Server error while deleting lead",
       duration: 4500
     });
+  } finally {
+    confirmDeleteBtn.disabled = false;
+    confirmDeleteBtn.textContent = deletingLeadIds?.length
+      ? `Delete ${deletingLeadIds.length} leads`
+      : "🗑️ Yes, Delete";
+    bulkLeadOperation = false;
+    updateBulkLeadControls();
   }
+});
+
+document.getElementById("selectVisibleLeads").addEventListener("change", event => {
+  if (event.target.checked) {
+    for (const id of visibleLeadIds) {
+      if (selectedLeadIds.has(id)) continue;
+      if (selectedLeadIds.size >= MAX_SELECTED_LEADS) break;
+      selectedLeadIds.add(id);
+    }
+    if (visibleLeadIds.some(id => !selectedLeadIds.has(id))) {
+      showToast({
+        title: "Selection limit",
+        message: "Bulk actions support up to 500 leads at a time.",
+        duration: 4000
+      });
+    }
+  } else {
+    visibleLeadIds.forEach(id => selectedLeadIds.delete(id));
+  }
+  renderUI();
+});
+document.getElementById("leadsBody").addEventListener("change", event => {
+  if (!event.target.classList.contains("lead-select")) return;
+  const id = event.target.dataset.leadId;
+  if (
+    event.target.checked &&
+    !selectedLeadIds.has(id) &&
+    selectedLeadIds.size >= MAX_SELECTED_LEADS
+  ) {
+    event.target.checked = false;
+    showToast({
+      title: "Selection limit",
+      message: "Bulk actions support up to 500 leads at a time.",
+      duration: 4000
+    });
+    return;
+  }
+  if (event.target.checked) selectedLeadIds.add(id);
+  else selectedLeadIds.delete(id);
+  renderUI();
+});
+document.getElementById("bulkStatusButton").addEventListener("click", updateSelectedLeadStatus);
+document.getElementById("bulkDeleteButton").addEventListener("click", deleteSelectedLeads);
+document.getElementById("clearLeadSelection").addEventListener("click", () => {
+  selectedLeadIds.clear();
+  renderUI();
 });
 
 
@@ -954,7 +1032,33 @@ function renderCalendar(list) {
 // =====================
 // RENDER UI
 // =====================
+function updateBulkLeadControls() {
+  const selectedCount = selectedLeadIds.size;
+  const visibleSelectedCount = visibleLeadIds.filter(id => selectedLeadIds.has(id)).length;
+  const selectVisible = document.getElementById("selectVisibleLeads");
+  document.getElementById("selectedLeadCount").textContent = `${selectedCount} selected`;
+  document.getElementById("bulkStatusButton").disabled =
+    selectedCount === 0 || bulkLeadOperation;
+  document.getElementById("bulkDeleteButton").disabled =
+    selectedCount === 0 || bulkLeadOperation;
+  document.getElementById("clearLeadSelection").disabled =
+    selectedCount === 0 || bulkLeadOperation;
+  selectVisible.disabled = visibleLeadIds.length === 0 || bulkLeadOperation;
+  selectVisible.checked =
+    visibleLeadIds.length > 0 && visibleSelectedCount === visibleLeadIds.length;
+  selectVisible.indeterminate =
+    visibleSelectedCount > 0 && visibleSelectedCount < visibleLeadIds.length;
+  document.querySelectorAll("#leadsBody .lead-select").forEach(checkbox => {
+    checkbox.disabled = bulkLeadOperation;
+  });
+}
+
 function renderUI() {
+  const availableLeadIds = new Set(leads.map(lead => String(lead._id)));
+  for (const id of selectedLeadIds) {
+    if (!availableLeadIds.has(id)) selectedLeadIds.delete(id);
+  }
+
   const search = document.getElementById("searchInput").value.toLowerCase();
   const status = document.getElementById("statusFilter").value;
   const follow = document.getElementById("followupFilter").value;
@@ -990,6 +1094,7 @@ filtered.sort((a, b) => {
 
   return da - db;
 });
+  visibleLeadIds = filtered.map(lead => String(lead._id));
 
   renderPipelineCounts(filtered);
   renderLostAnalytics(leads);
@@ -1011,6 +1116,12 @@ tr.className = followupRowClass(l.nextFollowUpAt);
 
 
     tr.innerHTML = `
+  <td>
+    <input class="lead-select" type="checkbox" data-lead-id="${String(l._id)}"
+      aria-label="Select ${escapeHtml(l.name)}"
+      ${selectedLeadIds.has(String(l._id)) ? "checked" : ""}
+      style="width:auto;" />
+  </td>
   <td>
     <b>${escapeHtml(l.name)}</b><br/>
     <span class="small">📞 ${escapeHtml(l.phone || "")}</span><br/>
@@ -1044,7 +1155,7 @@ ${["pro", "agent"].includes(currentUserPlan) ? `
     <span class="small">${followText}</span>
   </td>
   <td>
-  <div style="display:flex;gap:8px;flex-wrap:wrap;">
+  <div class="lead-actions ${["starter", "pro", "agent"].includes(currentUserPlan) ? "" : "lead-actions-free"}">
 
     <button class="btn btn-outline"
       onclick="openEditLead('${l._id}')">
@@ -1074,6 +1185,8 @@ ${["pro", "agent"].includes(currentUserPlan) ? `
 
     tbody.appendChild(tr);
   });
+
+  updateBulkLeadControls();
 
   // calendar uses ALL leads
   renderCalendar(leads);
@@ -1506,11 +1619,74 @@ await loadLeads();
 // =====================
 // DELETE LEAD
 // =====================
+async function updateSelectedLeadStatus() {
+  const ids = Array.from(selectedLeadIds);
+  const status = document.getElementById("bulkLeadStatus").value;
+  if (!ids.length) return;
+  if (!status) {
+    showToast({
+      title: "Choose a lead type",
+      message: "Select the new type before updating leads.",
+      duration: 3500
+    });
+    return;
+  }
+
+  bulkLeadOperation = true;
+  updateBulkLeadControls();
+  try {
+    const response = await fetch("/api/leads/bulk-status", {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify({ ids, status })
+    });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(result.message || "Could not update selected leads.");
+    }
+
+    selectedLeadIds.clear();
+    document.getElementById("bulkLeadStatus").value = "";
+    showToast({
+      title: "✅ Lead types updated",
+      message: result.message || `${result.updated || 0} lead(s) updated.`,
+      duration: 4000
+    });
+    await loadLeads();
+  } catch (error) {
+    showToast({
+      title: "❌ Update failed",
+      message: error.message || "Could not update selected leads.",
+      duration: 5000
+    });
+  } finally {
+    bulkLeadOperation = false;
+    updateBulkLeadControls();
+  }
+}
+
+function deleteSelectedLeads() {
+  const ids = Array.from(selectedLeadIds);
+  if (!ids.length) return;
+
+  deletingLeadId = null;
+  deletingLeadIds = ids;
+  deleteLeadDetails.textContent =
+    `Delete ${ids.length} selected lead(s)? This action cannot be undone.`;
+  confirmDeleteBtn.textContent = `Delete ${ids.length} leads`;
+  deleteModal.classList.remove("hidden");
+}
+
 window.deleteLead = function deleteLead(id) {
   const lead = leads.find(x => x._id === id);
   if (!lead) return;
 
   deletingLeadId = id;
+  deletingLeadIds = null;
+  confirmDeleteBtn.textContent = "🗑️ Yes, Delete";
 
   deleteLeadDetails.innerHTML = `
     <div style="font-weight:900;color:#00d4ff;margin-bottom:6px;">${lead.name || "Unnamed Lead"}</div>

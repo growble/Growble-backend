@@ -192,6 +192,88 @@ height:56px;
       box-shadow:0 0 0 3px rgba(0,212,255,0.12);
     }
 
+    .bulk-lead-toolbar{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      flex-wrap:wrap;
+      padding:10px 12px;
+      margin-bottom:12px;
+      border:1px solid rgba(255,255,255,0.1);
+      border-radius:14px;
+      background:rgba(0,0,0,0.2);
+    }
+    .bulk-lead-selection,
+    .bulk-lead-control-group,
+    .bulk-lead-destructive-group{
+      display:flex;
+      align-items:center;
+      gap:8px;
+    }
+    .bulk-lead-selection{
+      padding-right:12px;
+      border-right:1px solid rgba(255,255,255,0.1);
+    }
+    .bulk-lead-selection label{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      font-size:12px;
+      font-weight:700;
+      white-space:nowrap;
+    }
+    .bulk-lead-selection input{
+      width:16px;
+      height:16px;
+      accent-color:#00d4ff;
+    }
+    .bulk-lead-selection-count{
+      padding:6px 9px;
+      border:1px solid rgba(0,212,255,0.2);
+      border-radius:999px;
+      background:rgba(0,212,255,0.08);
+      color:#b9f4ff;
+      font-size:12px;
+      font-weight:700;
+      white-space:nowrap;
+    }
+    .bulk-lead-toolbar select{
+      min-width:175px;
+      padding:8px 10px;
+      border-radius:10px;
+    }
+    .bulk-lead-toolbar .btn{
+      padding:8px 11px;
+      border-radius:10px;
+      white-space:nowrap;
+    }
+    .bulk-lead-destructive-group{
+      margin-left:auto;
+      padding-left:12px;
+      border-left:1px solid rgba(255,255,255,0.1);
+    }
+    .bulk-lead-toolbar .btn:disabled{
+      opacity:0.45;
+      cursor:not-allowed;
+      transform:none;
+    }
+
+    .lead-actions{
+      display:grid;
+      grid-template-columns:repeat(2,minmax(96px,1fr));
+      gap:7px;
+      min-width:205px;
+    }
+    .lead-actions .btn{
+      padding:8px 10px;
+      border-radius:9px;
+      font-size:12px;
+      white-space:nowrap;
+    }
+    .lead-actions-free .btn-danger{
+      grid-column:1 / -1;
+    }
+
     /* leads table */
     table{width:100%;border-collapse:collapse;overflow:hidden;border-radius:16px;}
     thead th{
@@ -296,6 +378,33 @@ height:56px;
   #leadsContainer{
     max-height:420px;
     overflow-y:auto;
+  }
+
+  .bulk-lead-toolbar{
+    align-items:stretch;
+    gap:10px;
+  }
+  .bulk-lead-selection{
+    width:100%;
+    justify-content:space-between;
+    padding:0 0 8px;
+    border-right:0;
+    border-bottom:1px solid rgba(255,255,255,0.1);
+  }
+  .bulk-lead-control-group{
+    flex:1;
+  }
+  .bulk-lead-toolbar select{
+    min-width:0;
+    flex:1;
+  }
+  .bulk-lead-destructive-group{
+    width:100%;
+    justify-content:flex-end;
+    margin-left:0;
+    padding:8px 0 0;
+    border-top:1px solid rgba(255,255,255,0.1);
+    border-left:0;
   }
 
 }
@@ -547,6 +656,31 @@ lost lead reasons and trends.
           </select>
         </div>
 
+        <div class="bulk-lead-toolbar" id="bulkLeadToolbar" aria-label="Bulk lead actions">
+          <div class="bulk-lead-selection">
+            <label>
+              <input type="checkbox" id="selectVisibleLeads" aria-label="Select all visible leads" />
+              Select visible
+            </label>
+            <span id="selectedLeadCount" class="bulk-lead-selection-count">0 selected</span>
+          </div>
+          <div class="bulk-lead-control-group">
+            <select id="bulkLeadStatus" aria-label="New lead type">
+              <option value="">Change lead type...</option>
+              <option value="new">New</option>
+              <option value="contacted">Contacted</option>
+              <option value="interested">Interested</option>
+              <option value="closed">Closed</option>
+              <option value="lost">Lost</option>
+            </select>
+            <button type="button" class="btn btn-outline" id="bulkStatusButton" disabled>Apply</button>
+          </div>
+          <div class="bulk-lead-destructive-group">
+            <button type="button" class="btn btn-outline" id="clearLeadSelection" disabled>Clear</button>
+            <button type="button" class="btn btn-danger" id="bulkDeleteButton" disabled>Delete selected</button>
+          </div>
+        </div>
+
         <!-- leads table -->
         <div
 <div
@@ -559,6 +693,7 @@ max-height:500px;
           <table>
             <thead>
               <tr>
+                <th aria-label="Select lead"></th>
                 <th>Lead</th>
                 <th>Status</th>
                 <th>Next Follow-up</th>
