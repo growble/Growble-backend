@@ -218,7 +218,6 @@ const knowledgeTestResult=
 document.getElementById("knowledgeTestResult");
 const token=
 localStorage.getItem("token");
-let knowledgeDocumentCount=0;
 
 knowledgeTestQuestion.addEventListener("keydown",event=>{
   if(event.key==="Enter"){
@@ -235,8 +234,6 @@ async function loadKnowledgeDocuments(){
     const data=await res.json();
     if(!res.ok) throw new Error(data.message||"Could not load documents.");
 
-    knowledgeDocumentCount=data.used;
-    knowledgeTestButton.disabled=knowledgeDocumentCount===0;
     knowledgeDocumentUsage.textContent=
       `Knowledge documents: ${data.used}/${data.limit === null ? "Unlimited" : data.limit}`;
     knowledgeDocuments.replaceChildren();
@@ -266,7 +263,6 @@ async function loadKnowledgeDocuments(){
       knowledgeDocuments.append(row);
     });
   }catch(error){
-    knowledgeTestButton.disabled=true;
     knowledgeDocumentUsage.textContent=error.message;
   }
 }
@@ -297,7 +293,7 @@ knowledgeTestButton.onclick=async()=>{
   }catch(error){
     knowledgeTestResult.textContent=error.message;
   }finally{
-    knowledgeTestButton.disabled=knowledgeDocumentCount===0;
+    knowledgeTestButton.disabled=false;
   }
 };
 
