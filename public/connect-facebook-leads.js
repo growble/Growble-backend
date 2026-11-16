@@ -27,7 +27,11 @@ document.addEventListener("DOMContentLoaded", async () => {
   window.addEventListener("facebook-sdk-error", () => {
     resolveFacebookSdk(new Error("Facebook could not be loaded. Please refresh and try again."));
   }, { once: true });
-  window.fbAsyncInit = async function () {
+  window.fbAsyncInit = function () {
+    initializeFacebookSdk();
+  };
+
+  async function initializeFacebookSdk() {
     try {
       const config = await request("/api/meta/facebook-leads/config");
       window.FB.init({
@@ -41,7 +45,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       showStatus(error.message || "Facebook Lead Ads is unavailable.", true);
       resolveFacebookSdk(error);
     }
-  };
+  }
 
   function showStatus(message, isError = false, isSuccess = false) {
     status.textContent = message;
@@ -139,26 +143,8 @@ document.addEventListener("DOMContentLoaded", async () => {
       if (sdkError) throw sdkError;
       if (!window.FB) throw new Error("Facebook could not be loaded. Please refresh and try again.");
 
-      window.FB.login(async response => {
-        try {
-          if (!response.authResponse?.accessToken) {
-            throw new Error("Facebook authorization was cancelled or not granted.");
-          }
-          facebookAccessToken = response.authResponse.accessToken;
-          showStatus("Loading the Pages you can manage…");
-
-          const data = await request("/api/meta/facebook-leads/pages", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ accessToken: facebookAccessToken })
-          });
-          renderPages(data.pages);
-        } catch (error) {
-          showStatus(error.message || "Could not load your Facebook Pages.", true);
-        } finally {
-          authorizeButton.disabled = false;
-          authorizeButton.textContent = "Continue with Facebook";
-        }
+      window.FB.login(response => {
+        handleFacebookLogin(response);
       }, {
         scope: "pages_show_list,pages_read_engagement,pages_manage_metadata,leads_retrieval",
         return_scopes: true,
@@ -170,6 +156,28 @@ document.addEventListener("DOMContentLoaded", async () => {
       authorizeButton.textContent = "Continue with Facebook";
     }
   });
+
+  async function handleFacebookLogin(response) {
+    try {
+      if (!response.authResponse?.accessToken) {
+        throw new Error("Facebook authorization was cancelled or not granted.");
+      }
+      facebookAccessToken = response.authResponse.accessToken;
+      showStatus("Loading the Pages you can manage…");
+
+      const data = await request("/api/meta/facebook-leads/pages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ accessToken: facebookAccessToken })
+      });
+      renderPages(data.pages);
+    } catch (error) {
+      showStatus(error.message || "Could not load your Facebook Pages.", true);
+    } finally {
+      authorizeButton.disabled = false;
+      authorizeButton.textContent = "Continue with Facebook";
+    }
+  }
 
   function renderPages(pages) {
     pageList.replaceChildren();
