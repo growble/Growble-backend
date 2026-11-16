@@ -354,6 +354,56 @@ rgba(
 
 }
 
+.knowledgeTest{
+
+margin-top:16px;
+
+padding:14px;
+
+border:1px solid rgba(255,255,255,0.12);
+
+border-radius:12px;
+
+background:rgba(255,255,255,0.035);
+
+}
+
+.knowledgeTest p{
+
+margin-top:6px;
+
+font-size:12px;
+
+opacity:.8;
+
+}
+
+.knowledgeTest button{
+
+margin-top:10px;
+
+}
+
+.knowledgeTest button:disabled{
+
+opacity:.5;
+
+cursor:not-allowed;
+
+}
+
+#knowledgeTestResult{
+
+margin-top:10px;
+
+font-size:14px;
+
+line-height:1.5;
+
+white-space:pre-wrap;
+
+}
+
 #uploadStatus{
 
 margin-top:10px;
@@ -723,6 +773,34 @@ id="uploadStatus">
 
 <div id="knowledgeDocumentUsage" style="margin-top:12px;"></div>
 <div id="knowledgeDocuments"></div>
+
+<div class="knowledgeTest">
+
+<strong>Test your AI knowledge</strong>
+
+<p>Ask a question to check what the AI can answer from your saved business information and uploaded PDFs. Growble references these documents when replying; it does not retrain the AI model. Each test uses one AI reply.</p>
+
+<label for="knowledgeTestQuestion">Test question</label>
+
+<input
+id="knowledgeTestQuestion"
+type="text"
+maxlength="1000"
+placeholder="Ask about a fact in your uploaded PDF">
+
+<button
+type="button"
+id="knowledgeTestButton"
+class="uploadBtn"
+disabled>
+
+Ask AI
+
+</button>
+
+<div id="knowledgeTestResult" role="status" aria-live="polite"></div>
+
+</div>
 
 </div>
 

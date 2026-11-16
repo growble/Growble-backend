@@ -210,8 +210,22 @@ const knowledgeDocumentUsage=
 document.getElementById("knowledgeDocumentUsage");
 const uploadStatus=
 document.getElementById("uploadStatus");
+const knowledgeTestQuestion=
+document.getElementById("knowledgeTestQuestion");
+const knowledgeTestButton=
+document.getElementById("knowledgeTestButton");
+const knowledgeTestResult=
+document.getElementById("knowledgeTestResult");
 const token=
 localStorage.getItem("token");
+let knowledgeDocumentCount=0;
+
+knowledgeTestQuestion.addEventListener("keydown",event=>{
+  if(event.key==="Enter"){
+    event.preventDefault();
+    knowledgeTestButton.click();
+  }
+});
 
 async function loadKnowledgeDocuments(){
   try{
@@ -221,6 +235,8 @@ async function loadKnowledgeDocuments(){
     const data=await res.json();
     if(!res.ok) throw new Error(data.message||"Could not load documents.");
 
+    knowledgeDocumentCount=data.used;
+    knowledgeTestButton.disabled=knowledgeDocumentCount===0;
     knowledgeDocumentUsage.textContent=
       `Knowledge documents: ${data.used}/${data.limit === null ? "Unlimited" : data.limit}`;
     knowledgeDocuments.replaceChildren();
@@ -250,9 +266,40 @@ async function loadKnowledgeDocuments(){
       knowledgeDocuments.append(row);
     });
   }catch(error){
+    knowledgeTestButton.disabled=true;
     knowledgeDocumentUsage.textContent=error.message;
   }
 }
+
+knowledgeTestButton.onclick=async()=>{
+  const question=knowledgeTestQuestion.value.trim();
+  if(!question){
+    knowledgeTestResult.textContent="Enter a question to test your AI knowledge.";
+    return;
+  }
+
+  knowledgeTestButton.disabled=true;
+  knowledgeTestResult.textContent="Checking your saved knowledge and uploaded PDFs...";
+  try{
+    const res=await fetch("/api/knowledge-documents/test",{
+      method:"POST",
+      headers:{
+        "Content-Type":"application/json",
+        Authorization:`Bearer ${token}`
+      },
+      body:JSON.stringify({question})
+    });
+    const data=await res.json();
+    if(!res.ok) throw new Error(data.message||"Could not test your AI knowledge.");
+
+    knowledgeTestResult.textContent=
+      `${data.answer}\n\nYour knowledge base includes ${data.documentsAvailable} uploaded PDF document(s) and saved business information.`;
+  }catch(error){
+    knowledgeTestResult.textContent=error.message;
+  }finally{
+    knowledgeTestButton.disabled=knowledgeDocumentCount===0;
+  }
+};
 
 uploadBtn.onclick=()=>{
 
