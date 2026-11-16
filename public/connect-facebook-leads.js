@@ -14,6 +14,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const connectedPageList = document.getElementById("connectedPageList");
   const status = document.getElementById("status");
   let facebookAccessToken = "";
+  let facebookConfigurationId = "";
   let canConnectPages = false;
   let facebookSdkReady;
   let resolveFacebookSdk;
@@ -34,6 +35,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   async function initializeFacebookSdk() {
     try {
       const config = await request("/api/meta/facebook-leads/config");
+      facebookConfigurationId = config.configurationId;
       window.FB.init({
         appId: config.appId,
         autoLogAppEvents: true,
@@ -146,7 +148,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       window.FB.login(response => {
         handleFacebookLogin(response);
       }, {
-        scope: "pages_show_list,pages_read_engagement,pages_manage_metadata,leads_retrieval",
+        config_id: facebookConfigurationId,
         return_scopes: true,
         auth_type: "rerequest"
       });

@@ -31,20 +31,23 @@ router.get(
   authMiddleware,
   requireLeadAdsPlan,
   (req, res) => {
+    const configurationId = process.env.META_CONFIGURATION_ID || "";
     if (
       !process.env.META_APP_ID ||
       !process.env.META_APP_SECRET ||
+      !/^\d+$/.test(configurationId) ||
       !/^[a-f0-9]{64}$/i.test(process.env.META_TOKEN_ENCRYPTION_KEY || "")
     ) {
       return res.status(503).json({
         success: false,
-        message: "Facebook Lead Ads integration is not configured."
+        message: "Facebook Lead Ads integration requires META_APP_ID, META_APP_SECRET, a numeric META_CONFIGURATION_ID, and a valid META_TOKEN_ENCRYPTION_KEY."
       });
     }
 
     res.json({
       success: true,
-      appId: process.env.META_APP_ID
+      appId: process.env.META_APP_ID,
+      configurationId
     });
   }
 );

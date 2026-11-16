@@ -80,7 +80,7 @@
     <h1>Connect Facebook Lead Ads</h1>
     <p>Authorize your Facebook account, choose the Pages that run lead forms, and Growble will add new form submissions to your leads dashboard.</p>
     <div class="note">
-      Available on Pro and Agent. Facebook Lead Ads forms must collect a phone number. Meta may require app review and the <code>leads_retrieval</code> permission before this works for other people’s Pages. Configure the Meta Page webhook for the <code>leadgen</code> field and set <code>META_TOKEN_ENCRYPTION_KEY</code> to a persistent 32-byte hexadecimal key.
+      Available on Pro and Agent. Set <code>META_APP_ID</code>, <code>META_APP_SECRET</code>, the numeric <code>META_CONFIGURATION_ID</code>, and a persistent 32-byte hexadecimal <code>META_TOKEN_ENCRYPTION_KEY</code>. Configure Facebook Login for Business to request <code>pages_show_list</code>, <code>pages_read_engagement</code>, <code>pages_manage_metadata</code>, and <code>leads_retrieval</code>, and to return a user access token. Meta may require App Review for other people’s Pages. Configure the Meta Page webhook for the <code>leadgen</code> field.
     </div>
 
     <div id="connectedPages" class="pages" hidden>
