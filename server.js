@@ -1,3 +1,5 @@
+require("dotenv").config();
+
 const startAutomationCron = require("./cron/automationCron");
 const express = require("express");
 const cors = require("cors");
@@ -8,7 +10,6 @@ const fs = require("fs");
 if (!fs.existsSync("./uploads")) {
   fs.mkdirSync("./uploads", { recursive: true });
 }
-require("dotenv").config();
 require("./cron/followUp");
 const uploadBrochure=
 
