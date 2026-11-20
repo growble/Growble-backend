@@ -28,6 +28,8 @@
       right: 22px;
       bottom: 82px;
       z-index: 9999;
+      display: flex;
+      flex-direction: column;
       width: min(410px, calc(100vw - 28px));
       height: min(680px, calc(100vh - 112px));
       overflow: hidden;
@@ -37,7 +39,29 @@
       box-shadow: 0 16px 50px rgba(0,0,0,.5);
     }
     #growbleSupportPanel[hidden] { display: none; }
-    #growbleSupportPanel iframe { width: 100%; height: 100%; border: 0; }
+    #growbleSupportPanel iframe {
+      flex: 1;
+      width: 100%;
+      min-height: 0;
+      border: 0;
+    }
+    #growbleSupportBackBar {
+      flex: none;
+      padding: 6px 10px;
+      border-bottom: 1px solid rgba(255,255,255,.12);
+      background: #0b1220;
+    }
+    #growbleSupportBackBar[hidden] { display: none; }
+    #growbleSupportBack {
+      min-height: 34px;
+      padding: 0 11px;
+      border: 1px solid rgba(0,212,255,.45);
+      border-radius: 8px;
+      background: transparent;
+      color: #8beaff;
+      font: 700 13px Arial, sans-serif;
+      cursor: pointer;
+    }
     @media (max-width: 560px) {
       #growbleSupportLauncher { right: 14px; bottom: 14px; }
       #growbleSupportPanel {
@@ -58,6 +82,25 @@
   const frame = document.createElement("iframe");
   frame.dataset.src = "/support.html?mode=widget";
   frame.title = "Growble support assistant";
+
+  const backBar = document.createElement("div");
+  backBar.id = "growbleSupportBackBar";
+  backBar.hidden = true;
+  const backButton = document.createElement("button");
+  backButton.id = "growbleSupportBack";
+  backButton.type = "button";
+  backButton.textContent = "← Back";
+  backButton.addEventListener("click", () => {
+    frame.contentWindow.history.back();
+  });
+  backBar.appendChild(backButton);
+
+  frame.addEventListener("load", () => {
+    const helpPath = new URL(frame.dataset.src, window.location.origin).pathname;
+    backBar.hidden = frame.contentWindow.location.pathname === helpPath;
+  });
+
+  panel.appendChild(backBar);
   panel.appendChild(frame);
 
   const launcher = document.createElement("button");
