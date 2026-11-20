@@ -55,6 +55,17 @@ cursor:pointer;
 .brand img{
 height:56px;
 }
+.brand-copy{
+  display:flex;
+  flex-direction:column;
+  gap:2px;
+}
+.brand-tagline{
+  color:#a7bbca;
+  font-size:11px;
+  font-weight:700;
+  letter-spacing:.2px;
+}
     .user-mini{
       font-size:13px;
       opacity:0.9;
@@ -524,7 +535,10 @@ height:56px;
       <div>
         <div class="brand" onclick="window.location.href='/'">
   <img src="/images/logo.png" alt="Growble Logo">
-  <span>Growble</span>
+  <span class="brand-copy">
+    <span>Growble</span>
+    <span class="brand-tagline">Turn Conversations into Customers</span>
+  </span>
 </div>
         <div class="user-mini" id="userMini">Loading user...</div>
       </div>
