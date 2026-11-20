@@ -12,6 +12,17 @@ if (!token || role !== "user") {
   window.location.href = "/login.html";
 }
 
+const accountDetailsToggle = document.getElementById("accountDetailsToggle");
+const userMini = document.getElementById("userMini");
+accountDetailsToggle.addEventListener("click", () => {
+  const isExpanded = accountDetailsToggle.getAttribute("aria-expanded") === "true";
+  accountDetailsToggle.setAttribute("aria-expanded", String(!isExpanded));
+  accountDetailsToggle.textContent = isExpanded
+    ? "Show account details"
+    : "Hide account details";
+  userMini.hidden = isExpanded;
+});
+
 // =====================
 // LOGOUT
 // =====================

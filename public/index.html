@@ -67,9 +67,23 @@ height:56px;
   letter-spacing:.2px;
 }
     .user-mini{
+      max-width:min(520px, calc(100vw - 48px));
+      max-height:45vh;
+      margin-top:8px;
+      padding:12px;
+      overflow:auto;
+      overflow-wrap:anywhere;
+      border:1px solid rgba(255,255,255,0.12);
+      border-radius:12px;
+      background:rgba(0,0,0,0.22);
       font-size:13px;
       opacity:0.9;
       line-height:1.4;
+    }
+    .account-details-toggle{
+      margin-top:8px;
+      padding:7px 10px;
+      font-size:12px;
     }
 
     .actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
@@ -540,7 +554,11 @@ height:56px;
     <span class="brand-tagline">Turn Conversations into Customers</span>
   </span>
 </div>
-        <div class="user-mini" id="userMini">Loading user...</div>
+        <button type="button" class="btn btn-outline account-details-toggle"
+          id="accountDetailsToggle" aria-expanded="false" aria-controls="userMini">
+          Show account details
+        </button>
+        <div class="user-mini" id="userMini" hidden>Loading user...</div>
       </div>
 
       <div class="actions">
