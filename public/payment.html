@@ -32,11 +32,16 @@
     }
 
     .brand{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:10px;
       font-size:26px;
       font-weight:900;
       color:#00d4ff;
       margin-bottom:10px;
     }
+    .brand img{height:42px;width:42px;object-fit:contain}
 
     h2{font-size:22px;margin-bottom:10px}
 
@@ -84,7 +89,7 @@
 
 <body>
   <div class="card">
-    <div class="brand">Growble</div>
+    <div class="brand"><img src="/images/logo.png" alt="" aria-hidden="true"/> <span>Growble</span></div>
 
     <h2><span id="purchaseTitle">Upgrade to</span> <span id="planName" style="color:#00d4ff">PRO AI</span></h2>
     <p id="purchaseDescription" style="opacity:0.85">Unlock premium growth features instantly.</p>

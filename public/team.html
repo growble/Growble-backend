@@ -8,6 +8,8 @@
     *{box-sizing:border-box;font-family:Arial,Helvetica,sans-serif}
     body{margin:0;min-height:100vh;padding:24px;background:radial-gradient(circle at top,#0a2a43,#0b1220 55%);color:#fff}
     main{max-width:820px;margin:auto}
+    .page-brand{display:flex;align-items:center;gap:10px;color:#00d4ff;font-size:23px;font-weight:900;margin-bottom:10px}
+    .page-brand img{height:44px;width:44px;object-fit:contain}
     .card{padding:22px;margin:18px 0;border-radius:16px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12)}
     h1,h2{margin-top:0}
     .muted{opacity:.75;font-size:14px}
@@ -23,6 +25,7 @@
 </head>
 <body>
   <main>
+    <div class="page-brand"><img src="/images/logo.png" alt="" aria-hidden="true"/><span>Growble</span></div>
     <p><a class="button" href="/index.html">← Dashboard</a></p>
     <h1>Team workspace</h1>
     <p class="muted" id="seatSummary">Loading workspace…</p>

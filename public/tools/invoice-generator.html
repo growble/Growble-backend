@@ -45,10 +45,14 @@
     }
 
     .logo-title {
+      display:flex;
+      align-items:center;
+      gap:10px;
       font-size: 38px;
       font-weight: 900;
       color: #00d4ff;
     }
+    .logo-title img { height:48px; width:48px; object-fit:contain; }
 
     .tagline {
       margin-top: 6px;
@@ -624,7 +628,7 @@
 <div class="container">
 
   <header>
-    <div class="logo-title">Growble</div>
+    <div class="logo-title"><img src="/images/logo.png" alt="" aria-hidden="true"/> <span>Growble</span></div>
     <div class="tagline">
       Turn Conversations into Customers
     </div>

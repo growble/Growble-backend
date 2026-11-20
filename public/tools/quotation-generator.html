@@ -52,10 +52,14 @@
 
 
     .logo-title {
+      display:flex;
+      align-items:center;
+      gap:10px;
       font-size: 38px;
       font-weight: 900;
       color: #00d4ff;
     }
+    .logo-title img { height:48px; width:48px; object-fit:contain; }
 
 
     .tagline {
@@ -746,7 +750,8 @@
   <header>
 
     <div class="logo-title">
-      Growble
+      <img src="/images/logo.png" alt="" aria-hidden="true"/>
+      <span>Growble</span>
     </div>
 
     <div class="tagline">

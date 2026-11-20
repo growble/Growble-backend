@@ -32,7 +32,8 @@
       gap: 12px;
     }
     .topbar { flex-wrap: wrap; margin-bottom: 24px; }
-    .brand { color: #00d4ff; font-size: 24px; font-weight: 900; }
+    .brand { display:flex; align-items:center; gap:10px; color: #00d4ff; font-size: 24px; font-weight: 900; }
+    .brand img { height:42px; width:42px; object-fit:contain; }
     .header-links { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
     a { color: #8beaff; text-decoration: none; }
     a:hover { text-decoration: underline; }
@@ -173,7 +174,7 @@
 <main class="container">
   <header class="topbar">
     <div>
-      <div class="brand">Growble Admin</div>
+      <div class="brand"><img src="/images/logo.png" alt="" aria-hidden="true"/><span>Growble Admin</span></div>
       <div class="subtle">Business overview · plans · leads · WhatsApp · AI usage</div>
     </div>
     <nav class="header-links" aria-label="Admin links">
