@@ -36,6 +36,15 @@ const UserSchema = new mongoose.Schema(
       enum: ["admin", "user"],
       default: "user"
     },
+    workspaceRole: {
+      type: String,
+      enum: ["owner", "manager", "sales"],
+      default: "sales"
+    },
+    crmPipeline: {
+      type: [String],
+      default: ["New", "Qualified", "Proposal", "Negotiation", "Closed Won", "Closed Lost"]
+    },
 
     workspaceOwner: {
       type: mongoose.Schema.Types.ObjectId,

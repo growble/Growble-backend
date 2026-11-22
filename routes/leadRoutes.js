@@ -14,6 +14,7 @@ const { qualifyLeadForWorkspace } = require("../services/leadQualificationServic
 const { getWorkspaceLeadQuery, getWorkspaceOwnerId } = require("../utils/workspace");
 const getWorkspaceKnowledge = require("../utils/workspaceKnowledge");
 const { parseLeadUpload } = require("../services/leadImportService");
+const { runLeadWorkflows } = require("../services/crmWorkflowService");
 const {
   hasRemainingUsage,
   recordPlanUsage,
@@ -70,7 +71,10 @@ function presentLead(lead, plan) {
  */
 router.post("/", auth, async (req, res) => {
   try {
-    const { name, phone, email, source, notes, nextFollowUpAt } = req.body;
+    const {
+      name, phone, email, source, notes, nextFollowUpAt,
+      pipelineStage, owner, dealValue, expectedCloseDate, campaign, customFields
+    } = req.body;
 
     if (!name || !phone) {
       return res.status(400).json({
@@ -99,11 +103,19 @@ router.post("/", auth, async (req, res) => {
       email,
       source,
       notes,
-nextFollowUpAt: nextFollowUpAt ? new Date(nextFollowUpAt) : null,
+      nextFollowUpAt: nextFollowUpAt ? new Date(nextFollowUpAt) : null,
+      pipelineStage: pipelineStage || "New",
+      owner: owner || null,
+      dealValue: Number(dealValue || 0),
+      expectedCloseDate: expectedCloseDate ? new Date(expectedCloseDate) : null,
+      campaign: campaign || "",
+      customFields: customFields && typeof customFields === "object" ? customFields : {}
     });
 const qualification = await qualifyLeadForWorkspace(lead, req.workspaceOwner);
 
 await lead.save();
+    await runLeadWorkflows(req.workspaceOwner, lead, "lead_created");
+    await lead.save();
 
     res.status(201).json({
       message: "Lead created successfully",
@@ -434,7 +446,10 @@ router.delete("/bulk", auth, async (req, res) => {
  */
 router.put("/:id", auth, async (req, res) => {
   try {
-    const { status, notes, nextFollowUpAt, followUpDate, name, phone, lostReason } = req.body;
+    const {
+      status, notes, nextFollowUpAt, followUpDate, name, phone, lostReason,
+      pipelineStage, owner, dealValue, expectedCloseDate, campaign, customFields
+    } = req.body;
 
     const lead = await Lead.findOne({
       $and: [
@@ -457,6 +472,16 @@ if (status === "lost") {
   lead.lostReason = lostReason || null;
 }
     if (notes !== undefined) lead.notes = notes;
+    if (pipelineStage !== undefined) lead.pipelineStage = pipelineStage;
+    if (owner !== undefined) lead.owner = owner || null;
+    if (dealValue !== undefined) lead.dealValue = Math.max(0, Number(dealValue || 0));
+    if (expectedCloseDate !== undefined) {
+      lead.expectedCloseDate = expectedCloseDate ? new Date(expectedCloseDate) : null;
+    }
+    if (campaign !== undefined) lead.campaign = campaign;
+    if (customFields !== undefined && customFields && typeof customFields === "object") {
+      lead.customFields = customFields;
+    }
 
     // use whichever field your schema supports
     if (nextFollowUpAt !== undefined) {
@@ -499,6 +524,12 @@ if (notes !== undefined) {
     action: `Notes updated`
   });
 }
+if (pipelineStage !== undefined) {
+  lead.activityLog.push({ action: `Pipeline stage changed to ${pipelineStage}` });
+}
+if (owner !== undefined) {
+  lead.activityLog.push({ action: owner ? "Lead owner assigned" : "Lead owner removed" });
+}
 
    // ✅ automation only for PRO
 if (hasPlanFeature(req.workspaceOwner.plan, "advancedAnalytics")) {
@@ -507,6 +538,10 @@ if (hasPlanFeature(req.workspaceOwner.plan, "advancedAnalytics")) {
 
 // 🔥 SAVE CHANGES TO DATABASE
 await lead.save();
+if (status !== undefined) {
+  await runLeadWorkflows(req.workspaceOwner, lead, "status_changed");
+  await lead.save();
+}
 
 res.status(200).json({
   message: "Lead updated successfully",

@@ -79,8 +79,19 @@ async function sendTeamInvitationEmail(to, inviterName, inviteUrl, planName) {
   await transporter.sendMail(mailOptions);
 }
 
+async function sendCrmEmail(to, subject, body) {
+  await transporter.sendMail({
+    from: `"Growble CRM" <${process.env.EMAIL_USER}>`,
+    to,
+    subject: String(subject || "Growble CRM notification"),
+    text: String(body || ""),
+    html: `<div style="font-family:Arial,sans-serif;line-height:1.6">${String(body || "").replace(/\n/g, "<br/>")}</div>`
+  });
+}
+
 sendFollowUpEmail.sendPasswordResetEmail = sendPasswordResetEmail;
 sendFollowUpEmail.sendTeamInvitationEmail = sendTeamInvitationEmail;
+sendFollowUpEmail.sendCrmEmail = sendCrmEmail;
 sendFollowUpEmail.isConfigured = () =>
   Boolean(process.env.EMAIL_USER && process.env.EMAIL_PASS);
 

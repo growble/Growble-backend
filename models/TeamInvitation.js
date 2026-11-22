@@ -25,7 +25,12 @@ const TeamInvitationSchema = new mongoose.Schema(
       required: true
     },
     acceptedAt: Date,
-    revokedAt: Date
+    revokedAt: Date,
+    role: {
+      type: String,
+      enum: ["manager", "sales"],
+      default: "sales"
+    }
   },
   { timestamps: true }
 );

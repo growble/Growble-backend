@@ -59,6 +59,7 @@ let selectedLeadIds = new Set();
 let visibleLeadIds = [];
 let bulkLeadOperation = false;
 const MAX_SELECTED_LEADS = 500;
+let crmConfig = null;
 
 
 document.getElementById("addLeadBtn").addEventListener("click", () => {
@@ -1210,6 +1211,34 @@ document.getElementById("searchInput").addEventListener("input", renderUI);
 document.getElementById("statusFilter").addEventListener("change", renderUI);
 document.getElementById("followupFilter").addEventListener("change", renderUI);
 
+document.getElementById("addLeadTaskButton").addEventListener("click", async () => {
+  if (!editingLeadId) return;
+  const title = document.getElementById("newLeadTaskTitle").value.trim();
+  if (!title) {
+    showToast({ title: "Task title required", message: "Enter a title for the task.", duration: 3000 });
+    return;
+  }
+  try {
+    const response = await fetch(`/api/crm/leads/${editingLeadId}/tasks`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({
+        title,
+        dueAt: document.getElementById("newLeadTaskDue").value || null,
+        assignedTo: document.getElementById("editLeadOwner").value || null
+      })
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.message || "Could not add task.");
+    document.getElementById("newLeadTaskTitle").value = "";
+    document.getElementById("newLeadTaskDue").value = "";
+    await openEditLead(editingLeadId);
+    await loadCrmFeatures();
+  } catch (error) {
+    showToast({ title: "❌ Task failed", message: error.message, duration: 4000 });
+  }
+});
+
 // =====================
 // ADD LEAD (POST /api/leads)
 // =====================
@@ -1222,6 +1251,10 @@ document.getElementById("addLeadForm").addEventListener("submit", async (e) => {
     notes: document.getElementById("leadNote").value.trim(),
     status: document.getElementById("leadStatus").value,
     nextFollowUpAt: document.getElementById("followupDate").value || null,
+    pipelineStage: document.getElementById("leadPipelineStage").value,
+    dealValue: document.getElementById("leadDealValue").value || 0,
+    expectedCloseDate: document.getElementById("leadExpectedCloseDate").value || null,
+    campaign: document.getElementById("leadCampaign").value.trim(),
     lostReason: lostReasonSelect.value || null,
   };
 
@@ -1395,6 +1428,13 @@ window.openEditLead = async function openEditLead(id) {
   document.getElementById("editLeadPhone").value = lead.phone || "";
   document.getElementById("editLeadNote").value = lead.notes || "";
   document.getElementById("editLeadStatus").value = lead.status || "new";
+  document.getElementById("editLeadPipelineStage").value = lead.pipelineStage || "New";
+  document.getElementById("editLeadDealValue").value = lead.dealValue || 0;
+  document.getElementById("editLeadExpectedCloseDate").value =
+    lead.expectedCloseDate ? formatDate(lead.expectedCloseDate) : "";
+  document.getElementById("editLeadCampaign").value = lead.campaign || "";
+  document.getElementById("editLeadOwner").value =
+    lead.owner ? String(lead.owner) : "";
 
   document.getElementById("editFollowupDate").value =
     lead.nextFollowUpAt ? formatDate(lead.nextFollowUpAt) : "";
@@ -1557,6 +1597,41 @@ if (
     logBox.innerHTML = "<span class='small'>No activity yet.</span>";
   }
 }
+
+    const tasksBox = document.getElementById("tasksBox");
+    tasksBox.innerHTML = "";
+    if (lead.tasks && lead.tasks.length) {
+      lead.tasks.slice().reverse().forEach(task => {
+        const row = document.createElement("div");
+        row.style.cssText = "display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px;margin-bottom:6px;border-radius:8px;background:rgba(255,255,255,.05)";
+        row.innerHTML = `
+          <span>${task.completed ? "✅" : "⭕"} ${escapeHtml(task.title)}<br/>
+          <span class="small">${task.dueAt ? formatDate(task.dueAt) : "No due date"}</span></span>
+          <button type="button" class="btn btn-outline" data-task-id="${task._id}">
+            ${task.completed ? "Reopen" : "Complete"}
+          </button>
+        `;
+        row.querySelector("button").addEventListener("click", async () => {
+          try {
+            await fetch(`/api/crm/leads/${id}/tasks/${task._id}`, {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+              body: JSON.stringify({ completed: !task.completed })
+            }).then(async response => {
+              const data = await response.json();
+              if (!response.ok) throw new Error(data.message || "Could not update task.");
+            });
+            await openEditLead(id);
+            await loadCrmFeatures();
+          } catch (error) {
+            showToast({ title: "❌ Task update failed", message: error.message, duration: 4000 });
+          }
+        });
+        tasksBox.append(row);
+      });
+    } else {
+      tasksBox.innerHTML = "<span class='small'>No tasks yet.</span>";
+    }
 };
 
 // =====================
@@ -1578,6 +1653,11 @@ if(status === "lost" && !pendingLostUpdate){
     notes: document.getElementById("editLeadNote").value.trim(),
     status: document.getElementById("editLeadStatus").value,
     nextFollowUpAt: document.getElementById("editFollowupDate").value || null,
+    pipelineStage: document.getElementById("editLeadPipelineStage").value,
+    owner: document.getElementById("editLeadOwner").value || null,
+    dealValue: document.getElementById("editLeadDealValue").value || 0,
+    expectedCloseDate: document.getElementById("editLeadExpectedCloseDate").value || null,
+    campaign: document.getElementById("editLeadCampaign").value.trim(),
     lostReason: lostReasonSelect.value || null
   };
 
@@ -1883,9 +1963,77 @@ window.generateAI = async function () {
 // =====================
 // INIT
 // =====================
+async function loadCrmFeatures() {
+  try {
+    const [configResponse, analyticsResponse] = await Promise.all([
+      fetch("/api/crm/config", {
+        headers: { Authorization: `Bearer ${token}` }
+      }),
+      fetch("/api/crm/analytics", {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+    ]);
+    const [config, analytics] = await Promise.all([
+      configResponse.json(),
+      analyticsResponse.json()
+    ]);
+    if (!configResponse.ok || !analyticsResponse.ok) return;
+
+    crmConfig = config;
+    const ownerSelect = document.getElementById("editLeadOwner");
+    ownerSelect.replaceChildren();
+    const unassigned = document.createElement("option");
+    unassigned.value = "";
+    unassigned.textContent = "Unassigned";
+    ownerSelect.append(unassigned);
+    config.members.forEach(member => {
+      const option = document.createElement("option");
+      option.value = member._id;
+      option.textContent = member.name || member.email;
+      ownerSelect.append(option);
+    });
+
+    const pipelineSelects = [
+      document.getElementById("leadPipelineStage"),
+      document.getElementById("editLeadPipelineStage")
+    ];
+    pipelineSelects.forEach(select => {
+      const current = select.value;
+      select.replaceChildren();
+      config.pipeline.forEach(stage => {
+        const option = document.createElement("option");
+        option.value = stage;
+        option.textContent = stage;
+        select.append(option);
+      });
+      if (config.pipeline.includes(current)) select.value = current;
+    });
+
+    const campaignText = analytics.campaigns
+      .filter(item => item._id)
+      .slice(0, 3)
+      .map(item => `${item._id}: ${item.count}`)
+      .join(" · ") || "No campaign data";
+    const sourceText = analytics.sources
+      .slice(0, 3)
+      .map(item => `${item._id || "other"}: ${item.count}`)
+      .join(" · ") || "No source data";
+    document.getElementById("crmAnalyticsContent").innerHTML = `
+      <div>Open pipeline value: <b>₹${Number(analytics.openDealValue || 0).toLocaleString("en-IN")}</b></div>
+      <div style="margin-top:5px">Closing this month: <b>${analytics.closingThisMonth || 0}</b></div>
+      <div style="margin-top:5px">Overdue tasks: <b>${analytics.overdueTaskCount || 0}</b></div>
+      <div style="margin-top:8px">Sources: ${escapeHtml(sourceText)}</div>
+      <div style="margin-top:5px">Campaigns: ${escapeHtml(campaignText)}</div>
+    `;
+  } catch (error) {
+    console.error("CRM feature load error:", error);
+  }
+}
+
 (async function init() {
   await loadUser();
   await loadLeads();
+  await loadCrmFeatures();
   await loadWhatsAppStatus();
 })();
 });

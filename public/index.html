@@ -756,6 +756,10 @@ max-height:500px;
             <div id="weekBox"></div>
           </div>
         </div>
+<div id="crmAnalyticsCard" style="padding:14px;margin-top:15px;border-radius:16px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09)">
+  <div class="card-title">Sales CRM Analytics</div>
+  <div id="crmAnalyticsContent" class="small">Loading CRM analytics...</div>
+</div>
 <div
 id="aiBusinessCard"
 
@@ -872,6 +876,18 @@ Loading AI...
         <input type="text" id="leadPhone" placeholder="Phone" required />
         <input type="text" id="leadNote" placeholder="Note (optional)" />
 
+        <input type="number" id="leadDealValue" min="0" step="0.01" placeholder="Deal value (optional)" />
+        <input type="date" id="leadExpectedCloseDate" />
+        <input type="text" id="leadCampaign" placeholder="Campaign / source campaign (optional)" />
+        <select id="leadPipelineStage">
+          <option value="New">New</option>
+          <option value="Qualified">Qualified</option>
+          <option value="Proposal">Proposal</option>
+          <option value="Negotiation">Negotiation</option>
+          <option value="Closed Won">Closed Won</option>
+          <option value="Closed Lost">Closed Lost</option>
+        </select>
+
         <select id="leadStatus">
           <option value="new">new</option>
           <option value="contacted">contacted</option>
@@ -900,6 +916,21 @@ Loading AI...
       <input type="text" id="editLeadName" placeholder="Full Name" required />
       <input type="text" id="editLeadPhone" placeholder="Phone" required />
       <input type="text" id="editLeadNote" placeholder="Note (optional)" />
+
+      <input type="number" id="editLeadDealValue" min="0" step="0.01" placeholder="Deal value" />
+      <input type="date" id="editLeadExpectedCloseDate" />
+      <input type="text" id="editLeadCampaign" placeholder="Campaign" />
+      <select id="editLeadPipelineStage">
+        <option value="New">New</option>
+        <option value="Qualified">Qualified</option>
+        <option value="Proposal">Proposal</option>
+        <option value="Negotiation">Negotiation</option>
+        <option value="Closed Won">Closed Won</option>
+        <option value="Closed Lost">Closed Lost</option>
+      </select>
+      <select id="editLeadOwner">
+        <option value="">Unassigned</option>
+      </select>
 
       <select id="editLeadStatus">
         <option value="new">new</option>
@@ -932,6 +963,15 @@ Loading AI...
 <div id="activitySection" style="margin-top:20px;">
   <h4 style="color:#00d4ff;">Activity Log</h4>
   <div id="activityLogBox" style="max-height:150px; overflow:auto; margin-top:10px;"></div>
+</div>
+<div id="tasksSection" style="margin-top:20px;">
+  <h4 style="color:#00d4ff;">Tasks</h4>
+  <div style="display:flex;gap:8px;margin-bottom:8px">
+    <input type="text" id="newLeadTaskTitle" placeholder="Task title" style="flex:1"/>
+    <input type="date" id="newLeadTaskDue" />
+  </div>
+  <button type="button" id="addLeadTaskButton" class="btn btn-outline">Add task</button>
+  <div id="tasksBox" style="max-height:150px;overflow-y:auto;margin-top:10px"></div>
 </div>
   </div>
 </div>

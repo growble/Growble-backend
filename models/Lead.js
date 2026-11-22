@@ -63,6 +63,56 @@ lostReason: {
   default: null
 },
 
+pipelineStage: {
+  type: String,
+  trim: true,
+  default: "New"
+},
+owner: {
+  type: mongoose.Schema.Types.ObjectId,
+  ref: "User",
+  default: null,
+  index: true
+},
+dealValue: {
+  type: Number,
+  default: 0,
+  min: 0
+},
+expectedCloseDate: {
+  type: Date,
+  default: null
+},
+campaign: {
+  type: String,
+  trim: true,
+  default: ""
+},
+customFields: {
+  type: Map,
+  of: mongoose.Schema.Types.Mixed,
+  default: {}
+},
+tasks: [
+  {
+    title: { type: String, required: true, trim: true },
+    dueAt: Date,
+    completed: { type: Boolean, default: false },
+    assignedTo: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null
+    },
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null
+    },
+    createdAt: { type: Date, default: Date.now },
+    completedAt: Date
+  }
+],
+
     // 👑 ADD HERE (INSIDE SCHEMA)
     activityLog: [
       {

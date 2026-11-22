@@ -74,6 +74,7 @@ app.use("/api/user", userRoutes);
 app.use("/api/support", supportRoutes);
 app.use("/api/public-assistant", publicAssistantRoutes);
 app.use("/api/team", teamRoutes);
+app.use("/api/crm", require("./routes/crmRoutes"));
 app.use("/api/templates", require("./routes/templateRoutes"));
 app.use("/api/ai", require("./routes/aiRoutes"));
 app.use("/webhook", require("./routes/webhook"));

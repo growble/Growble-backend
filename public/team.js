@@ -27,7 +27,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const row = document.createElement("div");
       row.className = "row";
       const label = document.createElement("span");
-      label.textContent = `${member.name} · ${member.email}${member.isOwner ? " · Owner" : ""}`;
+      label.textContent = `${member.name} · ${member.email}${member.isOwner ? " · Owner" : ` · ${member.workspaceRole || "sales"}`}`;
       row.append(label);
       if (canManage && !member.isOwner) {
         const remove = document.createElement("button");
@@ -57,7 +57,7 @@ document.addEventListener("DOMContentLoaded", () => {
       row.className = "row";
       const label = document.createElement("span");
       label.textContent =
-        `${invitation.email} · expires ${new Date(invitation.expiresAt).toLocaleDateString()}`;
+        `${invitation.email} · ${invitation.role || "sales"} · expires ${new Date(invitation.expiresAt).toLocaleDateString()}`;
       const revoke = document.createElement("button");
       revoke.className = "danger";
       revoke.textContent = "Revoke";
@@ -107,7 +107,10 @@ document.addEventListener("DOMContentLoaded", () => {
       await request("/api/team/invitations", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: document.getElementById("inviteEmail").value })
+        body: JSON.stringify({
+          email: document.getElementById("inviteEmail").value,
+          role: document.getElementById("inviteRole").value
+        })
       });
       document.getElementById("inviteEmail").value = "";
       statusEl.textContent = "Invitation sent.";

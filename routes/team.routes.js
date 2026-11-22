@@ -27,7 +27,7 @@ router.get("/members", async (req, res) => {
     const members = await User.find({
       $or: [{ _id: workspaceOwnerId }, { workspaceOwner: workspaceOwnerId }]
     })
-      .select("name email role createdAt")
+      .select("name email role workspaceRole createdAt")
       .sort({ createdAt: 1 });
 
     res.json({
@@ -54,7 +54,7 @@ router.get("/invitations", async (req, res) => {
       revokedAt: null,
       expiresAt: { $gt: new Date() }
     })
-      .select("email expiresAt createdAt")
+      .select("email expiresAt role createdAt")
       .sort({ createdAt: -1 });
     res.json({ invitations });
   } catch (error) {
@@ -76,6 +76,7 @@ router.post("/invitations", async (req, res) => {
   const email = typeof req.body?.email === "string"
     ? req.body.email.trim().toLowerCase()
     : "";
+  const role = req.body?.role === "manager" ? "manager" : "sales";
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     return res.status(400).json({ message: "Enter a valid email address." });
   }
@@ -137,7 +138,8 @@ router.post("/invitations", async (req, res) => {
       workspaceOwner: req.workspaceOwner._id,
       email,
       tokenHash: hashInvitationToken(token),
-      expiresAt: new Date(Date.now() + INVITATION_LIFETIME_MS)
+      expiresAt: new Date(Date.now() + INVITATION_LIFETIME_MS),
+      role
     });
     const inviteUrl =
       `${process.env.APP_URL.replace(/\/+$/, "")}/team-invite.html?token=${token}`;
@@ -250,6 +252,7 @@ router.post("/invitations/accept", async (req, res) => {
       { $set: { workspaceOwner: owner._id } }
     );
     req.user.workspaceOwner = owner._id;
+    req.user.workspaceRole = invitation.role || "sales";
     await req.user.save();
     invitation.acceptedAt = new Date();
     await invitation.save();
