@@ -228,9 +228,11 @@ document.getElementById("clearLeadSelection").addEventListener("click", () => {
 // =====================
 const countTotal = document.getElementById("countTotal");
 const countNew = document.getElementById("countNew");
-const countContacted = document.getElementById("countContacted");
-const countInterested = document.getElementById("countInterested");
-const countClosed = document.getElementById("countClosed");
+const countQualified = document.getElementById("countQualified");
+const countProposal = document.getElementById("countProposal");
+const countNegotiation = document.getElementById("countNegotiation");
+const countClosedWon = document.getElementById("countClosedWon");
+const countClosedLost = document.getElementById("countClosedLost");
 const conversionRate = document.getElementById("conversionRate");
 // =====================
 // STATE
@@ -284,11 +286,17 @@ function daysDiff(dateStr) {
 }
 
 function statusBadge(status) {
-  if (status === "new") return `<span class="badge b-new">New</span>`;
-  if (status === "contacted") return `<span class="badge b-contacted">Contacted</span>`;
-  if (status === "interested") return `<span class="badge b-interested">Interested</span>`;
-  if (status === "closed") return `<span class="badge b-closed">Closed</span>`;
-  if (status === "lost") return `<span class="badge b-lost">Lost</span>`;
+  const labels = {
+    new: "New",
+    qualified: "Qualified",
+    proposal: "Proposal",
+    negotiation: "Negotiation",
+    closed_won: "Closed Won",
+    closed_lost: "Closed Lost"
+  };
+  if (labels[status]) {
+    return `<span class="badge b-${status.replace("_", "-")}">${labels[status]}</span>`;
+  }
   return `<span class="badge">Unknown</span>`;
 }
 function followupRowClass(dateStr) {
@@ -362,22 +370,31 @@ async function getWhatsAppMessage(lead) {
     new: `Hello {name},\n\nThanks for reaching out to us.
 
 How can we help with your inquiry?`,
-    contacted: `Hello {name},\n\nJust following up on our previous conversation.
+    qualified: `Hello {name},\n\nThanks for sharing what you are looking for.
 
-Let me know if you have any questions or would like to discuss next steps.`,
-    interested: `Hello {name},\n\nWe're glad you're interested in what we offer.
+Would you like to discuss the next step?`,
+    proposal: `Hello {name},\n\nI've shared the proposal for your review.
 
-What would be most helpful as a next step?`,
-    closed: `Hello {name},\n\nFeel free to contact anytime.`,
-    lost: `Hello {name},\n\nWe understand the timing may not be right.
+Please let me know if you have any questions.`,
+    negotiation: `Hello {name},\n\nI'm following up on the proposal.
 
-If your plans change or you'd like to revisit this, we're happy to help.`
+What would help us agree on the next step?`,
+    closed_won: `Hello {name},\n\nThank you for choosing us. We look forward to working with you.`,
+    closed_lost: `Hello {name},\n\nThank you for considering us. If your plans change, we're happy to reconnect.`
   };
 
   const savedTemplates = await fetchTemplates();
+  const legacyTemplates = {
+    qualified: savedTemplates.contacted || savedTemplates.interested,
+    proposal: savedTemplates.interested,
+    negotiation: savedTemplates.interested,
+    closed_won: savedTemplates.closed,
+    closed_lost: savedTemplates.lost
+  };
 
   let template =
     savedTemplates[lead.status] ||
+    legacyTemplates[lead.status] ||
     defaultTemplates[lead.status] ||
     "Hello {name}";
 
@@ -866,27 +883,27 @@ function renderPipelineCounts(list) {
 
   const total = list.length;
   const newCount = list.filter(l => l.status === "new").length;
-  const contacted = list.filter(l => l.status === "contacted").length;
-  const interested = list.filter(l => l.status === "interested").length;
-  const closed = list.filter(l => l.status === "closed").length;
-  const lost = list.filter(l => l.status === "lost").length;
+  const qualified = list.filter(l => l.status === "qualified").length;
+  const proposal = list.filter(l => l.status === "proposal").length;
+  const negotiation = list.filter(l => l.status === "negotiation").length;
+  const closedWon = list.filter(l => l.status === "closed_won").length;
+  const closedLost = list.filter(l => l.status === "closed_lost").length;
   const missed = list.filter(l => daysDiff(l.nextFollowUpAt) < 0).length;
 
 
   countTotal.innerText = total;
   countNew.innerText = newCount;
-  countContacted.innerText = contacted;
-  countInterested.innerText = interested;
-  countClosed.innerText = closed;
-  const missedBox = document.getElementById("countMissed");
-  if (missedBox) missedBox.innerText = missed;
-  const countLost = document.getElementById("countLost");
-  if (countLost) countLost.innerText = lost;
+  countQualified.innerText = qualified;
+  countProposal.innerText = proposal;
+  countNegotiation.innerText = negotiation;
+  countClosedWon.innerText = closedWon;
+  countClosedLost.innerText = closedLost;
+  document.getElementById("countMissed").innerText = missed;
 
   let conversion = 0;
 
   if (total > 0) {
-    conversion = Math.round((closed / total) * 100);
+    conversion = Math.round((closedWon / total) * 100);
   }
 
   conversionRate.innerText = conversion + "%";
@@ -973,7 +990,7 @@ function renderLostAnalytics(list){
   };
 
   list.forEach(l=>{
-    if(l.status === "lost" && l.lostReason){
+    if(l.status === "closed_lost" && l.lostReason){
       if(reasons[l.lostReason] !== undefined){
         reasons[l.lostReason]++;
       }
@@ -1097,8 +1114,8 @@ function renderUI() {
 filtered.sort((a, b) => {
 
   // 1️⃣ Lost leads always go to bottom
-  if (a.status === "lost" && b.status !== "lost") return 1;
-  if (a.status !== "lost" && b.status === "lost") return -1;
+  if (a.status === "closed_lost" && b.status !== "closed_lost") return 1;
+  if (a.status !== "closed_lost" && b.status === "closed_lost") return -1;
 
   // 2️⃣ Otherwise sort by follow-up date
   const da = a.nextFollowUpAt ? new Date(a.nextFollowUpAt).getTime() : Infinity;
@@ -1251,7 +1268,6 @@ document.getElementById("addLeadForm").addEventListener("submit", async (e) => {
     notes: document.getElementById("leadNote").value.trim(),
     status: document.getElementById("leadStatus").value,
     nextFollowUpAt: document.getElementById("followupDate").value || null,
-    pipelineStage: document.getElementById("leadPipelineStage").value,
     dealValue: document.getElementById("leadDealValue").value || 0,
     expectedCloseDate: document.getElementById("leadExpectedCloseDate").value || null,
     campaign: document.getElementById("leadCampaign").value.trim(),
@@ -1428,7 +1444,6 @@ window.openEditLead = async function openEditLead(id) {
   document.getElementById("editLeadPhone").value = lead.phone || "";
   document.getElementById("editLeadNote").value = lead.notes || "";
   document.getElementById("editLeadStatus").value = lead.status || "new";
-  document.getElementById("editLeadPipelineStage").value = lead.pipelineStage || "New";
   document.getElementById("editLeadDealValue").value = lead.dealValue || 0;
   document.getElementById("editLeadExpectedCloseDate").value =
     lead.expectedCloseDate ? formatDate(lead.expectedCloseDate) : "";
@@ -1641,7 +1656,7 @@ document.getElementById("editLeadForm").addEventListener("submit", async (e) => 
   e.preventDefault();
 const status = document.getElementById("editLeadStatus").value;
 
-if(status === "lost" && !pendingLostUpdate){
+if(status === "closed_lost" && !pendingLostUpdate){
   lostReasonModal.classList.remove("hidden");
   return;
 }
@@ -1653,7 +1668,6 @@ if(status === "lost" && !pendingLostUpdate){
     notes: document.getElementById("editLeadNote").value.trim(),
     status: document.getElementById("editLeadStatus").value,
     nextFollowUpAt: document.getElementById("editFollowupDate").value || null,
-    pipelineStage: document.getElementById("editLeadPipelineStage").value,
     owner: document.getElementById("editLeadOwner").value || null,
     dealValue: document.getElementById("editLeadDealValue").value || 0,
     expectedCloseDate: document.getElementById("editLeadExpectedCloseDate").value || null,
@@ -1808,9 +1822,11 @@ window.openTemplateEditor = async function () {
     const templates = await res.json();
 
     document.getElementById("tplNew").value = templates.new || "";
-    document.getElementById("tplContacted").value = templates.contacted || "";
-    document.getElementById("tplInterested").value = templates.interested || "";
-    document.getElementById("tplClosed").value = templates.closed || "";
+    document.getElementById("tplQualified").value = templates.qualified || templates.contacted || "";
+    document.getElementById("tplProposal").value = templates.proposal || templates.interested || "";
+    document.getElementById("tplNegotiation").value = templates.negotiation || templates.interested || "";
+    document.getElementById("tplClosedWon").value = templates.closed_won || templates.closed || "";
+    document.getElementById("tplClosedLost").value = templates.closed_lost || templates.lost || "";
 
     document.getElementById("templateModal").classList.remove("hidden");
 
@@ -1828,9 +1844,11 @@ window.saveTemplates = async function () {
 
   const templates = {
     new: document.getElementById("tplNew").value.trim(),
-    contacted: document.getElementById("tplContacted").value.trim(),
-    interested: document.getElementById("tplInterested").value.trim(),
-    closed: document.getElementById("tplClosed").value.trim()
+    qualified: document.getElementById("tplQualified").value.trim(),
+    proposal: document.getElementById("tplProposal").value.trim(),
+    negotiation: document.getElementById("tplNegotiation").value.trim(),
+    closed_won: document.getElementById("tplClosedWon").value.trim(),
+    closed_lost: document.getElementById("tplClosedLost").value.trim()
   };
 
   try {
@@ -1991,22 +2009,6 @@ async function loadCrmFeatures() {
       option.value = member._id;
       option.textContent = member.name || member.email;
       ownerSelect.append(option);
-    });
-
-    const pipelineSelects = [
-      document.getElementById("leadPipelineStage"),
-      document.getElementById("editLeadPipelineStage")
-    ];
-    pipelineSelects.forEach(select => {
-      const current = select.value;
-      select.replaceChildren();
-      config.pipeline.forEach(stage => {
-        const option = document.createElement("option");
-        option.value = stage;
-        option.textContent = stage;
-        select.append(option);
-      });
-      if (config.pipeline.includes(current)) select.value = current;
     });
 
     const campaignText = analytics.campaigns

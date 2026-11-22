@@ -1,5 +1,6 @@
 const CrmWorkflow = require("../models/CrmWorkflow");
 const emailService = require("./emailService");
+const { normalizeLeadStage } = require("../utils/leadStages");
 
 async function runLeadWorkflows(workspaceOwner, lead, trigger) {
   if (!workspaceOwner) return [];
@@ -15,7 +16,7 @@ async function runLeadWorkflows(workspaceOwner, lead, trigger) {
     if (
       workflow.trigger === "status_changed" &&
       workflow.whenStatus &&
-      workflow.whenStatus !== lead.status
+      normalizeLeadStage(workflow.whenStatus) !== lead.status
     ) {
       continue;
     }

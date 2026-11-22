@@ -107,14 +107,21 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
 
-    const leadStatuses = ["new", "contacted", "interested", "closed", "lost"];
+    const leadStatuses = ["new", "qualified", "proposal", "negotiation", "closed_won", "closed_lost"];
     const leadCounts = new Map(
       data.leads.byStatus.map(item => [item._id, item.count])
     );
     leadChart = makeChart("leadChart", leadChart, {
       type: "bar",
       data: {
-        labels: leadStatuses,
+        labels: leadStatuses.map(status => ({
+          new: "New",
+          qualified: "Qualified",
+          proposal: "Proposal",
+          negotiation: "Negotiation",
+          closed_won: "Closed Won",
+          closed_lost: "Closed Lost"
+        }[status])),
         datasets: [{
           label: "Leads",
           data: leadStatuses.map(status => leadCounts.get(status) || 0),

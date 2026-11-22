@@ -8,6 +8,11 @@ const TemplateSchema = new mongoose.Schema({
   },
   templates: {
     new: String,
+    qualified: String,
+    proposal: String,
+    negotiation: String,
+    closed_won: String,
+    closed_lost: String,
     contacted: String,
     interested: String,
     closed: String,

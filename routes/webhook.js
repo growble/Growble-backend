@@ -105,7 +105,7 @@ if (lead && text && !alreadyRecorded) {
 
       if (lead) {
         lead.replied = true;
-        lead.status = "interested";
+        lead.status = "qualified";
         if (!alreadyRecorded) {
           await qualifyLeadForWorkspace(lead, user);
         }

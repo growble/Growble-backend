@@ -1,4 +1,5 @@
 const readXlsxFile = require("read-excel-file/node");
+const { normalizeLeadStage } = require("../utils/leadStages");
 
 const MAX_IMPORT_ROWS = 15000;
 const HEADER_FIELDS = {
@@ -10,20 +11,15 @@ const HEADER_FIELDS = {
   source: ["source", "leadsource"],
   nextFollowUpAt: ["followupdate", "nextfollowupdate", "nextfollowup", "nextfollowupat"]
 };
-const VALID_STATUSES = new Set(["new", "contacted", "interested", "closed", "lost"]);
 const VALID_SOURCES = new Set(["website", "whatsapp", "facebook", "manual", "other"]);
-const STATUS_ALIASES = new Map([
+const LEGACY_STATUS_ALIASES = new Map([
   ["open", "new"],
   ["uncontacted", "new"],
   ["new_lead", "new"],
-  ["contact", "contacted"],
-  ["called", "contacted"],
-  ["reached_out", "contacted"],
-  ["contacted_lead", "contacted"],
-  ["qualified", "interested"],
-  ["won", "closed"],
-  ["closed_won", "closed"],
-  ["closed_lost", "lost"]
+  ["contact", "qualified"],
+  ["called", "qualified"],
+  ["reached_out", "qualified"],
+  ["contacted_lead", "qualified"]
 ]);
 
 function importError(message, statusCode = 400) {
@@ -156,9 +152,7 @@ function parseFollowUpDate(value) {
 function normalizeStatus(value) {
   const rawStatus = text(value).toLowerCase().replace(/[\s-]+/g, "_");
   if (!rawStatus) return { status: "new", defaulted: false };
-  if (VALID_STATUSES.has(rawStatus)) return { status: rawStatus, defaulted: false };
-
-  const status = STATUS_ALIASES.get(rawStatus);
+  const status = normalizeLeadStage(rawStatus) || LEGACY_STATUS_ALIASES.get(rawStatus);
   return status
     ? { status, defaulted: false }
     : { status: "new", defaulted: true };

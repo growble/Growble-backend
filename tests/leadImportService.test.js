@@ -23,7 +23,7 @@ test("CSV import reads aliases and preserves an explicitly supplied lead status"
     email: "avery@example.com",
     notes: "Asked for details",
     source: "other",
-    status: "contacted",
+    status: "qualified",
     nextFollowUpAt: null
   });
   assert.equal(rows[0].statusDefaulted, false);
@@ -38,6 +38,11 @@ test("JSON import accepts canonical fields and defaults unknown statuses to new"
       leads: [
         { name: "Casey", phone: "5551234567", status: "pending" },
         { name: "Morgan", phone: "5557654321", status: "Interested" },
+        { name: "Taylor", phone: "5551112233", status: "Proposal" },
+        { name: "Riley", phone: "5552223344", status: "Closed Won" },
+        { name: "Drew", phone: "5553334455", status: "Closed Lost" },
+        { name: "Avery", phone: "5554445566", status: "Closed" },
+        { name: "Jordan", phone: "5555556677", status: "Lost" },
         { name: "Missing Phone" }
       ]
     })
@@ -45,8 +50,13 @@ test("JSON import accepts canonical fields and defaults unknown statuses to new"
 
   assert.equal(rows[0].lead.status, "new");
   assert.equal(rows[0].statusDefaulted, true);
-  assert.equal(rows[1].lead.status, "interested");
-  assert.deepEqual(rows[2].errors, ["Phone is required."]);
+  assert.equal(rows[1].lead.status, "qualified");
+  assert.equal(rows[2].lead.status, "proposal");
+  assert.equal(rows[3].lead.status, "closed_won");
+  assert.equal(rows[4].lead.status, "closed_lost");
+  assert.equal(rows[5].lead.status, "closed_won");
+  assert.equal(rows[6].lead.status, "closed_lost");
+  assert.deepEqual(rows[7].errors, ["Phone is required."]);
 });
 
 test("CSV import reads a next follow-up date column", async () => {

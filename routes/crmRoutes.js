@@ -4,6 +4,7 @@ const Lead = require("../models/Lead");
 const User = require("../models/User");
 const CrmWorkflow = require("../models/CrmWorkflow");
 const { getWorkspaceLeadQuery } = require("../utils/workspace");
+const { LEAD_STAGES, normalizeLeadStage } = require("../utils/leadStages");
 
 const router = express.Router();
 
@@ -28,7 +29,7 @@ router.get("/config", async (req, res) => {
     }).sort({ createdAt: -1 });
 
     res.json({
-      pipeline: req.workspaceOwner.crmPipeline,
+      pipeline: LEAD_STAGES,
       members,
       workflows,
       canManage: canManage(req)
@@ -39,26 +40,16 @@ router.get("/config", async (req, res) => {
   }
 });
 
-router.put("/pipeline", async (req, res) => {
-  if (!canManage(req)) {
-    return res.status(403).json({ message: "Only managers and workspace owners can edit the pipeline." });
-  }
-
-  const pipeline = Array.isArray(req.body?.pipeline)
-    ? [...new Set(req.body.pipeline.map(stage => String(stage).trim()).filter(Boolean))]
-    : [];
-  if (pipeline.length < 2) {
-    return res.status(400).json({ message: "A pipeline needs at least two stages." });
-  }
-
-  req.workspaceOwner.crmPipeline = pipeline;
-  await req.workspaceOwner.save();
-  res.json({ pipeline });
-});
-
 router.post("/workflows", async (req, res) => {
   if (!canManage(req)) {
     return res.status(403).json({ message: "Only managers and workspace owners can create workflows." });
+  }
+
+  const whenStatus = req.body?.whenStatus
+    ? normalizeLeadStage(req.body.whenStatus)
+    : "";
+  if (req.body?.whenStatus && !whenStatus) {
+    return res.status(400).json({ message: "Choose a valid pipeline stage for this workflow." });
   }
 
   try {
@@ -67,7 +58,7 @@ router.post("/workflows", async (req, res) => {
       name: req.body?.name,
       enabled: req.body?.enabled !== false,
       trigger: req.body?.trigger || "status_changed",
-      whenStatus: req.body?.whenStatus || "",
+      whenStatus,
       action: req.body?.action,
       taskTitle: req.body?.taskTitle || "",
       emailSubject: req.body?.emailSubject || "",
@@ -84,9 +75,16 @@ router.patch("/workflows/:id", async (req, res) => {
   if (!canManage(req)) {
     return res.status(403).json({ message: "Only managers and workspace owners can edit workflows." });
   }
+  const updates = { ...req.body };
+  if (Object.prototype.hasOwnProperty.call(updates, "whenStatus") && updates.whenStatus) {
+    updates.whenStatus = normalizeLeadStage(updates.whenStatus);
+    if (!updates.whenStatus) {
+      return res.status(400).json({ message: "Choose a valid pipeline stage for this workflow." });
+    }
+  }
   const workflow = await CrmWorkflow.findOneAndUpdate(
     { _id: req.params.id, workspaceOwner: req.workspaceOwner._id },
-    { $set: req.body },
+    { $set: updates },
     { new: true, runValidators: true }
   );
   if (!workflow) return res.status(404).json({ message: "Workflow not found." });
@@ -144,7 +142,7 @@ router.patch("/leads/:leadId/tasks/:taskId", async (req, res) => {
 router.get("/analytics", async (req, res) => {
   const query = getWorkspaceLeadQuery(req.user);
   const [leads, sourceRows, campaignRows, pipelineRows, overdueTasks] = await Promise.all([
-    Lead.find(query).select("status pipelineStage dealValue source campaign owner tasks expectedCloseDate"),
+    Lead.find(query).select("status dealValue source campaign owner tasks expectedCloseDate"),
     Lead.aggregate([
       { $match: query },
       { $group: { _id: { $ifNull: ["$source", "other"] }, count: { $sum: 1 } } },
@@ -157,7 +155,7 @@ router.get("/analytics", async (req, res) => {
     ]),
     Lead.aggregate([
       { $match: query },
-      { $group: { _id: { $ifNull: ["$pipelineStage", "New"] }, count: { $sum: 1 }, dealValue: { $sum: "$dealValue" } } },
+      { $group: { _id: { $ifNull: ["$status", "new"] }, count: { $sum: 1 }, dealValue: { $sum: "$dealValue" } } },
       { $sort: { count: -1 } }
     ]),
     Lead.aggregate([
@@ -166,7 +164,7 @@ router.get("/analytics", async (req, res) => {
     ])
   ]);
 
-  const openDeals = leads.filter(lead => !["closed", "lost"].includes(lead.status));
+  const openDeals = leads.filter(lead => !["closed_won", "closed_lost"].includes(lead.status));
   res.json({
     sources: sourceRows,
     campaigns: campaignRows,

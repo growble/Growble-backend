@@ -15,6 +15,7 @@ const { getWorkspaceLeadQuery, getWorkspaceOwnerId } = require("../utils/workspa
 const getWorkspaceKnowledge = require("../utils/workspaceKnowledge");
 const { parseLeadUpload } = require("../services/leadImportService");
 const { runLeadWorkflows } = require("../services/crmWorkflowService");
+const { normalizeLeadStage } = require("../utils/leadStages");
 const {
   hasRemainingUsage,
   recordPlanUsage,
@@ -25,7 +26,6 @@ const {
 
 const MAX_IMPORT_FILE_SIZE = 5 * 1024 * 1024;
 const MAX_BULK_LEADS = 500;
-const LEAD_STATUSES = new Set(["new", "contacted", "interested", "closed", "lost"]);
 const leadUpload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: MAX_IMPORT_FILE_SIZE },
@@ -72,14 +72,18 @@ function presentLead(lead, plan) {
 router.post("/", auth, async (req, res) => {
   try {
     const {
-      name, phone, email, source, notes, nextFollowUpAt,
-      pipelineStage, owner, dealValue, expectedCloseDate, campaign, customFields
+      name, phone, email, source, notes, nextFollowUpAt, status, lostReason,
+      owner, dealValue, expectedCloseDate, campaign, customFields
     } = req.body;
 
     if (!name || !phone) {
       return res.status(400).json({
         message: "Name and phone are required",
       });
+    }
+    const stage = status === undefined ? "new" : normalizeLeadStage(status);
+    if (!stage) {
+      return res.status(400).json({ message: "Choose a valid sales pipeline stage." });
     }
 
     const workspaceOwnerId = getWorkspaceOwnerId(req.user);
@@ -103,8 +107,9 @@ router.post("/", auth, async (req, res) => {
       email,
       source,
       notes,
+      status: stage,
+      lostReason: stage === "closed_lost" ? lostReason || null : null,
       nextFollowUpAt: nextFollowUpAt ? new Date(nextFollowUpAt) : null,
-      pipelineStage: pipelineStage || "New",
       owner: owner || null,
       dealValue: Number(dealValue || 0),
       expectedCloseDate: expectedCloseDate ? new Date(expectedCloseDate) : null,
@@ -380,8 +385,8 @@ router.get("/:id", auth, async (req, res) => {
 
 router.patch("/bulk-status", auth, async (req, res) => {
   const ids = parseBulkLeadIds(req.body?.ids);
-  const status = req.body?.status;
-  if (!ids || !LEAD_STATUSES.has(status)) {
+  const status = normalizeLeadStage(req.body?.status);
+  if (!ids || !status) {
     return res.status(400).json({
       message: "Choose between 1 and 500 valid leads and a valid lead type."
     });
@@ -448,7 +453,7 @@ router.put("/:id", auth, async (req, res) => {
   try {
     const {
       status, notes, nextFollowUpAt, followUpDate, name, phone, lostReason,
-      pipelineStage, owner, dealValue, expectedCloseDate, campaign, customFields
+      owner, dealValue, expectedCloseDate, campaign, customFields
     } = req.body;
 
     const lead = await Lead.findOne({
@@ -467,12 +472,15 @@ router.put("/:id", auth, async (req, res) => {
     // ✅ allow normal edits for everyone
     if (name !== undefined) lead.name = name;
     if (phone !== undefined) lead.phone = phone;
-    if (status !== undefined) lead.status = status;
-if (status === "lost") {
-  lead.lostReason = lostReason || null;
-}
+    const stage = status === undefined ? undefined : normalizeLeadStage(status);
+    if (status !== undefined && !stage) {
+      return res.status(400).json({ message: "Choose a valid sales pipeline stage." });
+    }
+    if (stage !== undefined) {
+      lead.status = stage;
+      lead.lostReason = stage === "closed_lost" ? lostReason || null : null;
+    }
     if (notes !== undefined) lead.notes = notes;
-    if (pipelineStage !== undefined) lead.pipelineStage = pipelineStage;
     if (owner !== undefined) lead.owner = owner || null;
     if (dealValue !== undefined) lead.dealValue = Math.max(0, Number(dealValue || 0));
     if (expectedCloseDate !== undefined) {
@@ -504,13 +512,6 @@ if (!lead.activityLog) {
   lead.activityLog = [];
 }
 
-// Log status change
-if (status !== undefined) {
-  lead.activityLog.push({
-    action: `Status changed to ${lead.status}`
-  });
-}
-
 // Log follow-up change
 if (nextFollowUpAt !== undefined) {
   lead.activityLog.push({
@@ -524,8 +525,8 @@ if (notes !== undefined) {
     action: `Notes updated`
   });
 }
-if (pipelineStage !== undefined) {
-  lead.activityLog.push({ action: `Pipeline stage changed to ${pipelineStage}` });
+if (stage !== undefined) {
+  lead.activityLog.push({ action: `Pipeline stage changed to ${stage.replace(/_/g, " ")}` });
 }
 if (owner !== undefined) {
   lead.activityLog.push({ action: owner ? "Lead owner assigned" : "Lead owner removed" });
@@ -646,7 +647,7 @@ router.post("/send-followups", auth, async (req, res) => {
       getWorkspaceLeadQuery(req.user),
       {
         nextFollowUpAt: { $lte: now },
-        status: { $nin: ["closed", "lost"] }
+        status: { $nin: ["closed_won", "closed_lost"] }
       }
     ];
     if (hasPlanFeature(user.plan, "advancedAnalytics")) {

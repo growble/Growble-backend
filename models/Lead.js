@@ -42,7 +42,7 @@ const LeadSchema = new mongoose.Schema(
 
     status: {
       type: String,
-      enum: ["new", "contacted", "interested", "closed", "lost"],
+      enum: ["new", "qualified", "proposal", "negotiation", "closed_won", "closed_lost"],
       default: "new"
     },
 
@@ -63,11 +63,6 @@ lostReason: {
   default: null
 },
 
-pipelineStage: {
-  type: String,
-  trim: true,
-  default: "New"
-},
 owner: {
   type: mongoose.Schema.Types.ObjectId,
   ref: "User",

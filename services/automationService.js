@@ -7,16 +7,24 @@ const handleLeadAutomation = async (lead, previousStatus) => {
 
   switch (currentStatus) {
 
-    case "contacted":
-      console.log(`📞 Lead contacted: ${lead.name}`);
+    case "qualified":
+      console.log(`🔥 Lead qualified: ${lead.name}`);
       break;
 
-    case "interested":
-      console.log(`🔥 Lead interested: ${lead.name}`);
+    case "proposal":
+      console.log(`📄 Proposal sent: ${lead.name}`);
       break;
 
-    case "closed":
-      console.log(`✅ Lead closed: ${lead.name}`);
+    case "negotiation":
+      console.log(`🤝 Lead in negotiation: ${lead.name}`);
+      break;
+
+    case "closed_won":
+      console.log(`✅ Deal won: ${lead.name}`);
+      break;
+
+    case "closed_lost":
+      console.log(`❌ Deal lost: ${lead.name}`);
       break;
 
     default:
