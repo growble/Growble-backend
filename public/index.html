@@ -285,15 +285,19 @@ height:56px;
 
     .lead-actions{
       display:grid;
-      grid-template-columns:repeat(2,minmax(96px,1fr));
+      grid-template-columns:repeat(2,minmax(0,1fr));
       gap:7px;
-      min-width:205px;
+      min-width:220px;
     }
     .lead-actions .btn{
-      padding:8px 10px;
+      width:100%;
+      min-width:0;
+      padding:8px 6px;
       border-radius:9px;
       font-size:12px;
-      white-space:nowrap;
+      line-height:1.2;
+      white-space:normal;
+      overflow-wrap:anywhere;
     }
     .lead-actions-free .btn-danger{
       grid-column:1 / -1;
