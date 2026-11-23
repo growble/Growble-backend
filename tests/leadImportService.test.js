@@ -24,7 +24,10 @@ test("CSV import reads aliases and preserves an explicitly supplied lead status"
     notes: "Asked for details",
     source: "other",
     status: "qualified",
-    nextFollowUpAt: null
+    nextFollowUpAt: null,
+    dealValue: 0,
+    expectedCloseDate: null,
+    campaign: ""
   });
   assert.equal(rows[0].statusDefaulted, false);
   assert.equal(rows[1].lead.status, "new");
@@ -67,6 +70,49 @@ test("CSV import reads a next follow-up date column", async () => {
 
   assert.equal(rows[0].errors.length, 0);
   assert.equal(rows[0].lead.nextFollowUpAt.toISOString(), "2030-05-06T00:00:00.000Z");
+});
+
+test("CSV import extracts supported fields and ignores unrelated columns", async () => {
+  const rows = await parseLeadUpload(upload(
+    "leads.csv",
+    "Name,Phone,Email,Deal Amount,Expected Close Date,Campaign,Company Size,Internal Rating\n" +
+      "Avery,5551234567,avery@example.com,\"₹1,25,000\",2030-05-06,Spring Sale,50,Confidential"
+  ));
+
+  assert.equal(rows[0].errors.length, 0);
+  assert.equal(rows[0].lead.email, "avery@example.com");
+  assert.equal(rows[0].lead.dealValue, 125000);
+  assert.equal(rows[0].lead.expectedCloseDate.toISOString(), "2030-05-06T00:00:00.000Z");
+  assert.equal(rows[0].lead.campaign, "Spring Sale");
+  assert.equal(Object.hasOwn(rows[0].lead, "companySize"), false);
+  assert.equal(Object.hasOwn(rows[0].lead, "internalRating"), false);
+});
+
+test("JSON import ignores unsupported properties", async () => {
+  const rows = await parseLeadUpload(upload(
+    "leads.json",
+    JSON.stringify([{
+      name: "Avery",
+      phone: "5551234567",
+      status: "qualified",
+      internalRating: "Confidential",
+      arbitraryData: { retained: true }
+    }])
+  ));
+
+  assert.equal(rows[0].errors.length, 0);
+  assert.deepEqual(Object.keys(rows[0].lead).sort(), [
+    "campaign",
+    "dealValue",
+    "email",
+    "name",
+    "nextFollowUpAt",
+    "notes",
+    "phone",
+    "source",
+    "status",
+    "expectedCloseDate"
+  ].sort());
 });
 
 test("CSV import preserves the calendar day in day-first and month-first dates", async () => {

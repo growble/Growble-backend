@@ -920,7 +920,7 @@ Loading AI...
   <div id="importLeadsModal" class="modal hidden">
     <div class="modal-box" style="width:min(520px,calc(100vw - 32px));">
       <h2 style="margin-bottom:8px;">Import Leads</h2>
-      <p class="small">Upload a CSV, Excel (.xlsx), or JSON file. Include name and phone columns; optional status and next follow-up date columns are imported automatically. Use YYYY-MM-DD or DD/MM/YYYY for dates.</p>
+      <p class="small">Upload a CSV, Excel (.xlsx), or JSON file. Include name and phone; supported fields such as email, status, notes, source, follow-up date, deal value, expected close date, and campaign are imported when present. Extra columns and unsupported JSON properties are ignored. Use YYYY-MM-DD or DD/MM/YYYY for dates.</p>
       <p id="leadImportUsage" class="small" style="margin-top:10px;">Loading monthly import usage...</p>
       <form id="importLeadsForm">
         <input type="file" id="leadImportFile" accept=".csv,.xlsx,.json" required />

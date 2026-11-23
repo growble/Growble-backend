@@ -9,8 +9,12 @@ const HEADER_FIELDS = {
   status: ["status", "leadstatus", "leadtype", "type"],
   notes: ["note", "notes", "description"],
   source: ["source", "leadsource"],
-  nextFollowUpAt: ["followupdate", "nextfollowupdate", "nextfollowup", "nextfollowupat"]
+  nextFollowUpAt: ["followupdate", "nextfollowupdate", "nextfollowup", "nextfollowupat"],
+  dealValue: ["dealvalue", "value", "dealamount", "amount"],
+  expectedCloseDate: ["expectedclosedate", "closingdate", "expectedclose"],
+  campaign: ["campaign", "campaignname", "sourcecampaign"]
 };
+const SUPPORTED_HEADERS = new Set(Object.values(HEADER_FIELDS).flat());
 const VALID_SOURCES = new Set(["website", "whatsapp", "facebook", "manual", "other"]);
 const LEGACY_STATUS_ALIASES = new Map([
   ["open", "new"],
@@ -89,7 +93,9 @@ function rowsToObjects(rows) {
   return rows.slice(1).map(row => {
     const record = {};
     headers.forEach((header, index) => {
-      if (row[index] !== undefined) record[header] = row[index];
+      if (SUPPORTED_HEADERS.has(header) && row[index] !== undefined) {
+        record[header] = row[index];
+      }
     });
     return record;
   });
@@ -105,7 +111,8 @@ function getField(record, field) {
 function normalizeRecord(record) {
   const normalized = Object.create(null);
   for (const [key, value] of Object.entries(record)) {
-    normalized[headerName(key)] = value;
+    const header = headerName(key);
+    if (SUPPORTED_HEADERS.has(header)) normalized[header] = value;
   }
   return normalized;
 }
@@ -166,6 +173,9 @@ function normalizeLead(record, rowNumber) {
   const notes = text(getField(record, "notes"));
   const sourceValue = text(getField(record, "source")).toLowerCase();
   const followUpValue = getField(record, "nextFollowUpAt");
+  const dealValueText = text(getField(record, "dealValue"));
+  const expectedCloseValue = getField(record, "expectedCloseDate");
+  const campaign = text(getField(record, "campaign"));
   const statusResult = normalizeStatus(getField(record, "status"));
   const errors = [];
 
@@ -176,12 +186,28 @@ function normalizeLead(record, rowNumber) {
   }
   if (name.length > 200) errors.push("Name must be 200 characters or fewer.");
   if (phone.length > 50) errors.push("Phone must be 50 characters or fewer.");
+  if (campaign.length > 200) errors.push("Campaign must be 200 characters or fewer.");
+
+  const dealValue = dealValueText
+    ? Number(dealValueText.replace(/[,₹\s]/g, ""))
+    : 0;
+  if (!Number.isFinite(dealValue) || dealValue < 0) {
+    errors.push("Deal value must be a non-negative number.");
+  }
 
   let nextFollowUpAt = null;
   if (text(followUpValue)) {
     nextFollowUpAt = parseFollowUpDate(followUpValue);
     if (Number.isNaN(nextFollowUpAt.getTime())) {
       errors.push("Follow-up date is invalid.");
+    }
+  }
+
+  let expectedCloseDate = null;
+  if (text(expectedCloseValue)) {
+    expectedCloseDate = parseFollowUpDate(expectedCloseValue);
+    if (Number.isNaN(expectedCloseDate.getTime())) {
+      errors.push("Expected close date is invalid.");
     }
   }
 
@@ -197,7 +223,10 @@ function normalizeLead(record, rowNumber) {
       notes: notes || undefined,
       source,
       status: statusResult.status,
-      nextFollowUpAt
+      nextFollowUpAt,
+      dealValue,
+      expectedCloseDate,
+      campaign
     }
   };
 }
