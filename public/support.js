@@ -81,7 +81,12 @@ document.addEventListener("DOMContentLoaded", () => {
       const seats = workspace.seats || {};
       addSummaryItem(
         "Plan",
-        `${workspace.plan || "free"}${workspace.planExpiresAt
+        `${{
+          free: "Free",
+          starter: "Starter",
+          pro: "Pro AI",
+          agent: "AI Sales Agent"
+        }[workspace.plan] || "Free"}${workspace.planExpiresAt
           ? ` · expires ${new Date(workspace.planExpiresAt).toLocaleDateString()}`
           : ""}`
       );

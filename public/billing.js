@@ -26,8 +26,13 @@ document.addEventListener("DOMContentLoaded", async () => {
       throw new Error(data.message || "Could not load billing history.");
     }
 
-    planLabel.textContent =
-      `Current plan: ${(data.plan || "free").replace(/^\w/, letter => letter.toUpperCase())}`;
+    const planNames = {
+      free: "Free",
+      starter: "Starter",
+      pro: "Pro AI",
+      agent: "AI Sales Agent"
+    };
+    planLabel.textContent = `Current plan: ${planNames[data.plan] || "Free"}`;
     expiryLabel.textContent = data.planExpiresAt
       ? `Access expires ${new Date(data.planExpiresAt).toLocaleDateString()}. Plans are one-time purchases and do not auto-renew.`
       : "No paid plan expiry is currently set.";

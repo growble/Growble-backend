@@ -728,7 +728,12 @@ if (upgradeContainer) {
     document.getElementById("userMini").innerHTML = `
 <b>${escapeHtml(name)}</b> • ${escapeHtml(email)}
 <br>
-Plan: <b style="color:#00d4ff">${escapeHtml(plan)}</b>
+Plan: <b style="color:#00d4ff">${escapeHtml({
+  free: "Free",
+  starter: "Starter",
+  pro: "Pro AI",
+  agent: "AI Sales Agent"
+}[plan] || "Free")}</b>
 ${workspace.isOwner ? `<br>Workspace seats: ${workspace.memberCount}/${Number.isFinite(workspace.seatLimit) ? workspace.seatLimit : "Unlimited"}` : `<br>Workspace owner: ${escapeHtml(workspace.ownerName || "")}`}
 
 <br>
@@ -1730,8 +1735,8 @@ async function updateSelectedLeadStatus() {
   if (!ids.length) return;
   if (!status) {
     showToast({
-      title: "Choose a lead type",
-      message: "Select the new type before updating leads.",
+      title: "Choose a pipeline stage",
+      message: "Select the new stage before updating leads.",
       duration: 3500
     });
     return;
@@ -1756,7 +1761,7 @@ async function updateSelectedLeadStatus() {
     selectedLeadIds.clear();
     document.getElementById("bulkLeadStatus").value = "";
     showToast({
-      title: "✅ Lead types updated",
+      title: "✅ Pipeline stages updated",
       message: result.message || `${result.updated || 0} lead(s) updated.`,
       duration: 4000
     });
@@ -1981,6 +1986,99 @@ window.generateAI = async function () {
 // =====================
 // INIT
 // =====================
+const CRM_STAGE_LABELS = {
+  new: "New",
+  qualified: "Qualified",
+  proposal: "Proposal",
+  negotiation: "Negotiation",
+  closed_won: "Closed Won",
+  closed_lost: "Closed Lost"
+};
+
+function renderCrmWorkflows(workflows, canManage) {
+  const list = document.getElementById("crmWorkflowList");
+  const form = document.getElementById("crmWorkflowForm");
+  if (!list || !form) return;
+
+  form.hidden = !canManage;
+  if (!workflows.length) {
+    list.innerHTML = "<span class=\"small\">No workflows created yet.</span>";
+    return;
+  }
+
+  list.replaceChildren();
+  workflows.forEach(workflow => {
+    const row = document.createElement("div");
+    row.className = "crm-workflow-row";
+    const actionLabel = {
+      create_task: "Create task",
+      send_email: "Send email",
+      assign_owner: "Assign owner"
+    }[workflow.action] || workflow.action;
+    const trigger = workflow.whenStatus
+      ? `Stage: ${CRM_STAGE_LABELS[workflow.whenStatus] || workflow.whenStatus}`
+      : "All lead changes";
+    const details = document.createElement("div");
+    details.innerHTML =
+      `<b>${escapeHtml(workflow.name)}</b><br>` +
+      `<span class="small">${escapeHtml(trigger)} · ${escapeHtml(actionLabel)}${workflow.enabled ? "" : " · Disabled"}</span>`;
+    row.append(details);
+
+    if (canManage) {
+      const toggle = document.createElement("button");
+      toggle.type = "button";
+      toggle.className = "btn btn-outline";
+      toggle.textContent = workflow.enabled ? "Disable" : "Enable";
+      toggle.addEventListener("click", async () => {
+        try {
+          const response = await fetch(`/api/crm/workflows/${encodeURIComponent(workflow._id)}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+            body: JSON.stringify({ enabled: !workflow.enabled })
+          });
+          const data = await response.json().catch(() => ({}));
+          if (!response.ok) throw new Error(data.message || "Could not update workflow.");
+          await loadCrmFeatures();
+        } catch (error) {
+          showToast({ title: "Workflow update failed", message: error.message, duration: 4000 });
+        }
+      });
+      row.append(toggle);
+    }
+    list.append(row);
+  });
+}
+
+const crmWorkflowForm = document.getElementById("crmWorkflowForm");
+crmWorkflowForm?.addEventListener("submit", async event => {
+  event.preventDefault();
+  const formData = new FormData(crmWorkflowForm);
+  const action = formData.get("action");
+  const payload = {
+    name: formData.get("name"),
+    whenStatus: formData.get("whenStatus"),
+    action,
+    taskTitle: action === "create_task" ? formData.get("taskTitle") : "",
+    emailSubject: action === "send_email" ? formData.get("emailSubject") : "",
+    emailBody: action === "send_email" ? formData.get("emailBody") : "",
+    assignTo: action === "assign_owner" ? formData.get("assignTo") : null
+  };
+  try {
+    const response = await fetch("/api/crm/workflows", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify(payload)
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.message || "Could not create workflow.");
+    crmWorkflowForm.reset();
+    showToast({ title: "Workflow created", message: `${payload.name} is ready.`, duration: 3500 });
+    await loadCrmFeatures();
+  } catch (error) {
+    showToast({ title: "Workflow creation failed", message: error.message, duration: 4500 });
+  }
+});
+
 async function loadCrmFeatures() {
   try {
     const [configResponse, analyticsResponse] = await Promise.all([
@@ -2010,6 +2108,21 @@ async function loadCrmFeatures() {
       option.textContent = member.name || member.email;
       ownerSelect.append(option);
     });
+
+    const assignSelect = document.querySelector("#crmWorkflowForm select[name=\"assignTo\"]");
+    assignSelect.replaceChildren();
+    const unassignedWorkflowOwner = document.createElement("option");
+    unassignedWorkflowOwner.value = "";
+    unassignedWorkflowOwner.textContent = "Choose owner";
+    assignSelect.append(unassignedWorkflowOwner);
+    config.members.forEach(member => {
+      const option = document.createElement("option");
+      option.value = member._id;
+      option.textContent = member.name || member.email;
+      assignSelect.append(option);
+    });
+
+    renderCrmWorkflows(config.workflows || [], config.canManage);
 
     const campaignText = analytics.campaigns
       .filter(item => item._id)

@@ -168,6 +168,59 @@ height:56px;
   background:rgba(0,212,255,0.1);
 }
 
+.crm-workflow-list{
+  display:grid;
+  gap:8px;
+  margin-top:10px;
+}
+.crm-workflow-row{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:10px;
+  padding:10px;
+  border-radius:12px;
+  border:1px solid rgba(255,255,255,.08);
+  background:rgba(0,0,0,.18);
+  font-size:12px;
+}
+.crm-workflow-form{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+  gap:8px;
+  margin-top:10px;
+}
+.crm-workflow-form input,
+.crm-workflow-form select{
+  width:100%;
+  min-width:0;
+  margin:0;
+  padding:9px 10px;
+  font-size:12px;
+}
+.crm-workflow-form input[name="name"],
+.crm-workflow-form input[name="taskTitle"],
+.crm-workflow-form select[name="assignTo"]{
+  grid-column:1/-1;
+}
+.crm-workflow-form textarea{
+  grid-column:1/-1;
+  min-height:58px;
+  resize:vertical;
+  padding:9px 10px;
+  border-radius:10px;
+  border:1px solid rgba(255,255,255,.14);
+  background:rgba(0,0,0,.25);
+  color:white;
+  font-size:12px;
+}
+@media(max-width:768px){
+  .crm-workflow-form{grid-template-columns:1fr;}
+  .crm-workflow-form input,
+  .crm-workflow-form select,
+  .crm-workflow-form textarea{grid-column:1;}
+}
+
 /* pipeline */
     .pipeline{
       display:grid;
@@ -755,6 +808,35 @@ max-height:500px;
 <div id="crmAnalyticsCard" style="padding:14px;margin-top:15px;border-radius:16px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09)">
   <div class="card-title">Sales CRM Analytics</div>
   <div id="crmAnalyticsContent" class="small">Loading CRM analytics...</div>
+</div>
+<div id="crmWorkflowsCard" style="padding:14px;margin-top:15px;border-radius:16px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09)">
+  <div class="card-title" style="font-size:18px;margin-bottom:6px;">CRM Workflows</div>
+  <p class="small">Create an automatic task or owner update when leads enter a pipeline stage.</p>
+  <form id="crmWorkflowForm" class="crm-workflow-form">
+    <input name="name" aria-label="Workflow name" placeholder="Workflow name" required />
+    <select name="whenStatus" aria-label="Trigger pipeline stage">
+      <option value="">Any new or changed lead</option>
+      <option value="new">New</option>
+      <option value="qualified">Qualified</option>
+      <option value="proposal">Proposal</option>
+      <option value="negotiation">Negotiation</option>
+      <option value="closed_won">Closed Won</option>
+      <option value="closed_lost">Closed Lost</option>
+    </select>
+    <select name="action" aria-label="Workflow action" required>
+      <option value="create_task">Create task</option>
+      <option value="assign_owner">Assign owner</option>
+      <option value="send_email">Send email</option>
+    </select>
+    <input name="taskTitle" placeholder="Task title" />
+    <input name="emailSubject" placeholder="Email subject" />
+    <select name="assignTo" aria-label="Assign owner">
+      <option value="">Choose owner</option>
+    </select>
+    <textarea name="emailBody" placeholder="Email body"></textarea>
+    <button type="submit" class="btn btn-primary" style="grid-column:1/-1;">Create workflow</button>
+  </form>
+  <div id="crmWorkflowList" class="crm-workflow-list"><span class="small">Loading workflows...</span></div>
 </div>
 <div
 id="aiBusinessCard"
